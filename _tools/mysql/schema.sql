@@ -48,3 +48,11 @@ CREATE TABLE `unit_statuses` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_unit_statuses_answer_id` FOREIGN KEY (`answer_id`) REFERENCES `answers` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) Engine = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'ステータス';
+CREATE TABLE `tokens` (
+    `id` VARCHAR(36) NOT NULL COMMENT 'トークンID',
+    `user_id` VARCHAR(36) NOT NULL COMMENT 'ユーザーID',
+    `created_at` DATETIME(6) NOT NULL COMMENT 'レコード作成日時',
+    `updated_at` DATETIME(6) NOT NULL COMMENT 'レコード修正日時',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_token_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) Engine = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'トークン';
