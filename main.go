@@ -40,6 +40,7 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cnf.Port))
 	if err != nil {
@@ -47,7 +48,7 @@ func run(ctx context.Context) error {
 	}
 	s := grpc.NewServer()
 	pb.RegisterEventServer(s, handler.NewEventServer(db))
-	pb.RegisterAuthorizeServer(s, &handler.AuthorizationServer{})
+	pb.RegisterAuthorizeServer(s, handler.NewAuthorizationServer(db))
 
 	err = db.Ping()
 	if err != nil {
