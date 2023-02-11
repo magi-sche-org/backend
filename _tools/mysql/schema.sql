@@ -10,8 +10,8 @@ CREATE TABLE `events` (
     `owner_id` VARCHAR(36) NOT NULL COMMENT 'イベントオーナーID',
     `name` VARCHAR(128) NOT NULL COMMENT 'イベントのタイトル',
     `description` TEXT COMMENT 'イベントの説明',
-    `duration` INT UNSIGNED NOT NULL COMMENT 'イベントの長さ',
-    `unit_second` INT UNSIGNED NOT NULL COMMENT '時間単位',
+    `duration` BIGINT UNSIGNED NOT NULL COMMENT 'イベントの長さ',
+    `unit_second` BIGINT UNSIGNED NOT NULL COMMENT '時間単位',
     `created_at` DATETIME(6) NOT NULL COMMENT 'レコード作成日時',
     `updated_at` DATETIME(6) NOT NULL COMMENT 'レコード修正日時',
     PRIMARY KEY (`id`),
@@ -46,7 +46,7 @@ CREATE TABLE `unit_statuses` (
     `created_at` DATETIME(6) NOT NULL COMMENT 'レコード作成日時',
     `updated_at` DATETIME(6) NOT NULL COMMENT 'レコード修正日時',
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_unit_statuses_answer_id` FOREIGN KEY (`answer_id`) REFERENCES `answers` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+    CONSTRAINT `fk_unit_statuses_answer_id` FOREIGN KEY (`answer_id`) REFERENCES `answers` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) Engine = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'ステータス';
 CREATE TABLE `tokens` (
     `id` VARCHAR(36) NOT NULL COMMENT 'トークンID',

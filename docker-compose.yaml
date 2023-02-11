@@ -31,7 +31,7 @@ services:
       MYSQL_DATABASE: magische
     volumes:
       - magi-sche-db-data:/var/lib/mysql
-      - $PWD/_tools/mysql/conf.d:/etc/mysql/conf.d:cached
+      - ./_tools/mysql/conf.d:/etc/mysql/conf.d:cached
     ports:
       - "33306:3306"
     healthcheck:
