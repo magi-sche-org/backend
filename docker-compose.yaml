@@ -15,7 +15,7 @@ services:
     environment:
       SCHE_ENV: dev
       PORT: 8080
-      MYSQL_HOST: todo-db
+      MYSQL_HOST: db
       MYSQL_PORT: 3306
       MYSQL_USER: mysql
       MYSQL_PASSWORD: mysql
