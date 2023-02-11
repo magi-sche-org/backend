@@ -40,3 +40,9 @@ services:
       timeout: 1s
       retries: 100
       start_period: 1s
+  envoy:
+    build:
+      context: ./proxy
+    container_name: envoy-backend-grpc-proxy
+    ports:
+      - 9000:9000
