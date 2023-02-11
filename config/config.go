@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Env        string `env:"TODO_ENV" envDefault:"dev"`
-	Port       int    `env:"PORT" envDefault:"80"`
+	Env        string `env:"SCHE_ENV" envDefault:"dev"`
+	Port       int    `env:"PORT" envDefault:"50051"`
 	DBHost     string `env:"MYSQL_HOST" envDefault:"127.0.0.1"`
 	DBPort     int    `env:"MYSQL_PORT" envDefault:"33306"`
 	DBUser     string `env:"MYSQL_USER" envDefault:"mysql"`
