@@ -32,6 +32,7 @@ func NewUser() (User, error) {
 
 	return user, nil
 }
+
 func (u *User) Save(ctx context.Context, tx *sql.Tx) error {
 	u.UpdatedAt = time.Now()
 	_, err := tx.ExecContext(ctx, "INSERT INTO users (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)", u.ID, u.Name, u.CreatedAt, u.UpdatedAt)
@@ -61,4 +62,13 @@ func NewToken() (Token, error) {
 		b[i] = letters[v%byte(len(letters))]
 	}
 	return Token(b), nil
+}
+
+func (t *Token) FetchUser(ctx context.Context, db *sql.DB) (User, error) {
+	var user User
+	err := db.QueryRowContext(ctx, "SELECT u.id, u.name, u.created_at, u.updated_at FROM tokens as t JOIN users as u ON u.id = t.user_id WHERE t.id = ?", t).Scan(&user.ID, &user.Name, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return User{}, err
+	}
+	return user, nil
 }
