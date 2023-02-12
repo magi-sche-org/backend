@@ -40,9 +40,8 @@ static_resources:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
   clusters:
     - name: greeter_service
-      connect_timeout: 0.25s
+      connect_timeout: 0.5s
       type: logical_dns
-      http2_protocol_options: {}
       lb_policy: round_robin
       load_assignment:
         cluster_name: cluster_0
