@@ -136,14 +136,14 @@ func NewAnswerByRequest(r *pb.RegisterAnswerRequest, u User, e Event) (Answer, e
 }
 
 func (a *Answer) Save(ctx context.Context, tx *sql.Tx) error {
-	// // _, err := tx.ExecContext(ctx, "DELETE FROM unit_statuses WHERE answer_id = ?", a.ID)
-	// // if err != nil && err != sql.ErrNoRows {
-	// // 	return err
-	// // }
-	// _, err := tx.ExecContext(ctx, "DELETE FROM answers WHERE user_id = ? AND event_id = ?", a.UserID, a.EventID)
-	// if err != nil && err != sql.ErrNoRows {
-	// 	return err
-	// }
+	_, err := tx.ExecContext(ctx, "DELETE FROM unit_statuses WHERE answer_id = ?", a.ID)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, "DELETE FROM answers WHERE user_id = ? AND event_id = ?", a.UserID, a.EventID)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
 
 	now := time.Now()
 	entropy := rand.New(rand.NewSource(now.UnixNano()))

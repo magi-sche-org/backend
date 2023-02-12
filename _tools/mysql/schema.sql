@@ -46,7 +46,7 @@ CREATE TABLE `unit_statuses` (
     `created_at` DATETIME(6) NOT NULL COMMENT 'レコード作成日時',
     `updated_at` DATETIME(6) NOT NULL COMMENT 'レコード修正日時',
     PRIMARY KEY (`id`),
-    CONSTRAINT `fk_unit_statuses_answer_id` FOREIGN KEY (`answer_id`) REFERENCES `answers` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+    CONSTRAINT `fk_unit_statuses_answer_id` FOREIGN KEY (`answer_id`) REFERENCES `answers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) Engine = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'ステータス';
 CREATE TABLE `tokens` (
     `id` VARCHAR(36) NOT NULL COMMENT 'トークンID',
