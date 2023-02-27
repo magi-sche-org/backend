@@ -20,7 +20,7 @@ cp example.env .env
 ## 起動
 
 ```console
-make up
+make up-nd
 ```
 
 または
@@ -28,6 +28,8 @@ make up
 ```console
 docker compose up
 ```
+
+ログが不要な場合は`make up`，または`-d`オプションをつける
 
 ## DBマイグレーション
 
