@@ -23,6 +23,12 @@ cp example.env .env
 make up
 ```
 
+または
+
+```console
+docker compose up
+```
+
 ## DBマイグレーション
 
 初回のみ
