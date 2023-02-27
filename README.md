@@ -36,3 +36,9 @@ go install github.com/k0kubun/sqldef/cmd/mysqldef@latest
 ```console
 make migrate
 ```
+
+または
+
+```console
+mysqldef -u mysql -p mysql -h 127.0.0.1 -P 33306 magische < ./_tools/mysql/schema.sql
+```
