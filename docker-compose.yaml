@@ -17,26 +17,29 @@ services:
     volumes:
       - .:/app
     ports:
-      - "50052:${PORT}"
+      - "${GRPC_CLIENT_PORT:-50052}:50051"
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: curl -f http://localhost:8080/health
+      interval: 1s
+      timeout: 3s
+      retries: 100
+      start_period: 1s
   db:
     image: mysql:8.0
     container_name: magi-sche-db
-    environment:
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_ROOT_PASSWORD: mysql
-      MYSQL_DATABASE: magische
+    env_file:
+      - .env
     volumes:
       - magi-sche-db-data:/var/lib/mysql
       - ./_tools/mysql/conf.d:/etc/mysql/conf.d:cached
     ports:
-      - "33306:3306"
+      - "${MYSQL_CLIENT_PORT:-33306}:3306"
     healthcheck:
       test: mysqladmin ping -u${MYSQL_USER} -p${MYSQL_PASSWORD}
-      interval: 10s
+      interval: 2s
       timeout: 1s
       retries: 100
       start_period: 1s
@@ -44,5 +47,10 @@ services:
     build:
       context: ./proxy
     container_name: envoy-backend-grpc-proxy
+    env_file:
+      - .env
     ports:
-      - 9000:9000
+      - ${GRPC_WEB_CLIENT_PORT:-9000}:80
+    depends_on:
+      app:
+        condition: service_healthy

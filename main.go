@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/handler"
 	"github.com/geekcamp-vol11-team30/backend/pb"
 	"github.com/geekcamp-vol11-team30/backend/store"
@@ -32,17 +33,13 @@ func run(ctx context.Context) error {
 	// ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	// defer stop()
 
-	cnf, err := config.New()
-	if err != nil {
-		return err
-	}
-	db, err = store.ConnectDB()
+	db, err := store.ConnectDB()
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cnf.Port))
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", 50051))
 	if err != nil {
 		return err
 	}
@@ -58,8 +55,18 @@ func run(ctx context.Context) error {
 	log.Println("db.Ping() success")
 	reflection.Register(s)
 	go func() {
-		log.Printf("start server on port %d", cnf.Port)
+		log.Printf("start server on port %d", 50051)
 		s.Serve(l)
+	}()
+
+	go func() {
+		time.Sleep(1 * time.Second)
+		log.Printf("start health check server on port %d", 8080)
+		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
+		http.ListenAndServe(fmt.Sprintf(":%d", 8080), nil)
 	}()
 
 	quit := make(chan os.Signal, 1)

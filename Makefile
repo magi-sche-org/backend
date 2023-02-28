@@ -13,9 +13,11 @@ up: ## Do docker compose up with hot reload and background
 	docker compose up -d
 
 up-nd: ## Do docker compose up with hot reload and foreground
+	@make build-local
 	docker compose up
 
 down: ## Do docker compose down
+	@make build-local
 	docker compose down
 
 logs: ## Tail docker compose logs
