@@ -61,3 +61,17 @@ func (mr *MockEventControllerMockRecorder) Create(c interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockEventController)(nil).Create), c)
 }
+
+// Retrieve mocks base method.
+func (m *MockEventController) Retrieve(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Retrieve", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Retrieve indicates an expected call of Retrieve.
+func (mr *MockEventControllerMockRecorder) Retrieve(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Retrieve", reflect.TypeOf((*MockEventController)(nil).Retrieve), c)
+}
