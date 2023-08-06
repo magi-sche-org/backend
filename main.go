@@ -2,77 +2,68 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"log"
 	"net"
-	"net/http"
-	"os"
-	"os/signal"
-	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
-	"github.com/geekcamp-vol11-team30/backend/handler"
-	"github.com/geekcamp-vol11-team30/backend/pb"
-	"github.com/geekcamp-vol11-team30/backend/store"
+	"github.com/geekcamp-vol11-team30/backend/config"
+	"github.com/geekcamp-vol11-team30/backend/controller"
+	"github.com/geekcamp-vol11-team30/backend/db"
+	"github.com/geekcamp-vol11-team30/backend/middleware"
+	"github.com/geekcamp-vol11-team30/backend/repository"
+	"github.com/geekcamp-vol11-team30/backend/router"
+	"github.com/geekcamp-vol11-team30/backend/usecase"
+	"github.com/geekcamp-vol11-team30/backend/validator"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"go.uber.org/zap"
 )
 
-var db *sql.DB
-
 func main() {
-	log.Println("Go app started")
-	if err := run(context.Background()); err != nil {
-		log.Printf("error: %v", err)
-		os.Exit(1)
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	sugar := logger.Sugar()
+
+	if err := run(context.Background(), logger); err != nil {
+		sugar.Fatal(err)
 	}
 }
 
-func run(ctx context.Context) error {
-	// ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
-	// defer stop()
+func run(ctx context.Context, logger *zap.Logger) error {
+	logger.Info("magische starting...")
 
-	db, err := store.ConnectDB()
+	cfg, err := config.New()
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", 50051))
+	db, err := db.NewDB(cfg, logger)
 	if err != nil {
 		return err
 	}
-	s := grpc.NewServer()
-	pb.RegisterEventServer(s, handler.NewEventServer(db))
-	pb.RegisterAuthorizeServer(s, handler.NewAuthorizationServer(db))
+	boil.SetDB(db)
+	boil.DebugMode = cfg.Env == "dev"
 
-	err = db.Ping()
+	ur := repository.NewUserRepository(db)
+	ar := repository.NewAuthRepository(db)
+	er := repository.NewEventRepository(db)
+	uv := validator.NewUserValidator()
+	uu := usecase.NewUserUsecase(ur, uv)
+	au := usecase.NewAuthUsecase(cfg, logger, ar)
+	eu := usecase.NewEventUsecase(er)
+
+	em := middleware.NewErrorMiddleware(logger, uu)
+	atm := middleware.NewAccessTimeMiddleware()
+	am := middleware.NewAuthMiddleware(cfg, logger, au, uu)
+
+	uc := controller.NewUserController(uu)
+	ac := controller.NewAuthController(cfg, uu, au)
+	ec := controller.NewEventController(eu)
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
-		log.Println("error on db.Ping()")
-		return err
+		logger.Fatal("failed to listen port", zap.Error(err))
 	}
-	log.Println("db.Ping() success")
-	reflection.Register(s)
-	go func() {
-		log.Printf("start server on port %d", 50051)
-		s.Serve(l)
-	}()
 
-	go func() {
-		time.Sleep(1 * time.Second)
-		log.Printf("start health check server on port %d", 8080)
-		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-		})
-		http.ListenAndServe(fmt.Sprintf(":%d", 8080), nil)
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
-	log.Println("Shutting down server...")
-	s.GracefulStop()
-	return nil
+	e := router.NewRouter(cfg, logger, em, atm, am, uc, ac, ec)
+	s := NewServer(e, l, logger)
+	return s.Run(ctx)
 }

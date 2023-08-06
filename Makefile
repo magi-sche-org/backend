@@ -1,24 +1,28 @@
-.PHONY: help build build-local up down logs ps test
+.PHONY: help env build build-local up down logs ps test generate migrate
 .DEFAULT_GOAL := help
+
+env: ## Initialize project
+	cp example.env .env
 
 DOCKER_TAG := latest
 build: ## Build docker image to deploy
-	docker build -t geekcamp-vol11-team30/backend:${DOCKER_TAG} \
+	docker build -t shinonome-inc/magische:${DOCKER_TAG} \
 		--target deploy ./
 
 build-local: ## Build docker image to local development
 	docker compose build --no-cache
 
-up: ## Do docker compose up with hot reload and background
+up: ## Do docker compose up with hot reload
 	docker compose up -d
 
-up-nd: ## Do docker compose up with hot reload and foreground
-	@make build-local
-	docker compose up
-
 down: ## Do docker compose down
-	@make build-local
 	docker compose down
+
+init-local: ## Initialize local development
+	@make env
+	@make build-local
+	@make up
+	@make migrate
 
 logs: ## Tail docker compose logs
 	docker compose logs -f
@@ -26,17 +30,27 @@ logs: ## Tail docker compose logs
 ps: ## Check container status
 	docker compose ps
 
+exec: ## Execute command in container
+	docker compose exec -it app bash
+
+exec-db: ## Execute command in container
+	docker compose exec -it db mysql -umysql -pmysql magische
+
 test: ## Execute tests
-	go test -race -shuffle=on ./...
+	docker compose exec -it app go test -race -shuffle=on ./...  -coverprofile=coverage.out
 
-dry-migrate: ## Try migration
-	mysqldef -u mysql -p mysql -h 127.0.0.1 -P 33306 magische --dry-run < ./_tools/mysql/schema.sql
+generate: ## Go generate
+	rm -rf ./db/models
+	docker compose exec -it app go generate ./...
 
-migrate:  ## Execute migration
-	mysqldef -u mysql -p mysql -h 127.0.0.1 -P 33306 magische < ./_tools/mysql/schema.sql
+migrate: ## Execute migration
+	docker compose exec -it app goose -dir ./db/migrations mysql "mysql:mysql@tcp(db:3306)/magische?parseTime=true&multiStatements=true" up
+migrate-down: ## Execute migration
+	docker compose exec -it app goose -dir ./db/migrations mysql "mysql:mysql@tcp(db:3306)/magische?parseTime=true&multiStatements=true" down
 
-generate: ## Generate codes
-	go generate ./...
+migrate-remote: ## Execute migration on remote
+	docker build --target migrate -t shinonome-inc/magische-migrate:${DOCKER_TAG} .
+	docker run shinonome-inc/magische-migrate:${DOCKER_TAG}
 
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \

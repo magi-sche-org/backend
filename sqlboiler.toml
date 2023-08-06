@@ -1,0 +1,10 @@
+output = "db/models"
+no-tests = true
+
+[mysql]
+dbname = "magische"
+host = "db"
+port = 3306
+user = "mysql"
+pass = "mysql"
+sslmode = "false"
