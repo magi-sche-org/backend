@@ -1,6 +1,0 @@
-[submodule "proto"]
-	path = proto
-	url = git@github.com:geekcamp-vol11-team30/protocol.git
-[submodule "db/templates"]
-	path = db/templates
-	url = git@github.com:tiendc/sqlboiler-extensions.git
