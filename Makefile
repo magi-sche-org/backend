@@ -6,7 +6,7 @@ env: ## Initialize project
 
 DOCKER_TAG := latest
 build: ## Build docker image to deploy
-	docker build -t shinonome-inc/magische:${DOCKER_TAG} \
+	docker build -t geekcamp-vol11-team30/backend:${DOCKER_TAG} \
 		--target deploy ./
 
 build-local: ## Build docker image to local development
@@ -49,8 +49,8 @@ migrate-down: ## Execute migration
 	docker compose exec -it app goose -dir ./db/migrations mysql "mysql:mysql@tcp(db:3306)/magische?parseTime=true&multiStatements=true" down
 
 migrate-remote: ## Execute migration on remote
-	docker build --target migrate -t shinonome-inc/magische-migrate:${DOCKER_TAG} .
-	docker run shinonome-inc/magische-migrate:${DOCKER_TAG}
+	docker build --target migrate -t geekcamp-vol11-team30/backend-migrate:${DOCKER_TAG} .
+	docker run geekcamp-vol11-team30/backend-migrate:${DOCKER_TAG}
 
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
