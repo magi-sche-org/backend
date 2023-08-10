@@ -23,11 +23,12 @@ func TestNewRouter(t *testing.T) {
 	uc := mockcontroller.NewMockUserController(ctrl)
 	ac := mockcontroller.NewMockAuthController(ctrl)
 	ec := mockcontroller.NewMockEventController(ctrl)
+	oc := mockcontroller.NewMockOauthController(ctrl)
 
 	em := mockmiddleware.NewMockErrorMiddleware(ctrl)
 	atm := mockmiddleware.NewMockAccessTimeMiddleware(ctrl)
 	am := mockmiddleware.NewMockAuthMiddleware(ctrl)
-	e := router.NewRouter(&config.Config{}, logger, em, atm, am, uc, ac, ec)
+	e := router.NewRouter(&config.Config{}, logger, em, atm, am, uc, ac, ec, oc)
 
 	t.Run("GET /health", func(t *testing.T) {
 		request := httptest.NewRequest(http.MethodGet, "/health", nil)

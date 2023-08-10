@@ -18,6 +18,7 @@ func NewRouter(
 	uc controller.UserController,
 	ac controller.AuthController,
 	ec controller.EventController,
+	oc controller.OauthController,
 ) *echo.Echo {
 	// TODO: CORSの設定などを足す
 	e := echo.New()
@@ -33,6 +34,10 @@ func NewRouter(
 	e.POST("/users", uc.Register)
 	e.POST("/token", ac.CreateUnregisteredUserAndToken)
 	e.POST("/token/refresh", ac.RefreshToken)
+
+	og := e.Group("/oauth2")
+	og.GET("/google", oc.RedirectToAuthPage)
+	og.GET("/google/callback", oc.Callback)
 
 	eg := e.Group("/events")
 	eg.POST("", ec.Create, am.Handler)

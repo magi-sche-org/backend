@@ -13,6 +13,7 @@ type Config struct {
 	AccessExpireMinutes  int    `env:"ACCESS_TOKEN_EXPIRE_MINUTES" envDefault:"5"`
 	RefreshExpireMinutes int    `env:"REFRESH_TOKEN_EXPIRE_MINUTES" envDefault:"43200"`
 	MySQL                MySQL  `envPrefix:"MYSQL_"`
+	OAuth                OAuth  `envPrefix:"OAUTH_"`
 }
 
 type MySQL struct {
@@ -21,6 +22,13 @@ type MySQL struct {
 	User     string `env:"USER"`
 	Password string `env:"PASSWORD"`
 	DBName   string `env:"DATABASE"`
+}
+type OAuth struct {
+	Google Client `envPrefix:"GOOGLE_"`
+}
+type Client struct {
+	ClientID     string `env:"CLIENT_ID"`
+	ClientSecret string `env:"CLIENT_SECRET"`
 }
 
 func New() (*Config, error) {

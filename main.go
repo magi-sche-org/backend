@@ -57,13 +57,14 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	uc := controller.NewUserController(uu)
 	ac := controller.NewAuthController(cfg, uu, au)
 	ec := controller.NewEventController(eu)
+	oc := controller.NewOauthController(cfg, uu, au)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
 		logger.Fatal("failed to listen port", zap.Error(err))
 	}
 
-	e := router.NewRouter(cfg, logger, em, atm, am, uc, ac, ec)
+	e := router.NewRouter(cfg, logger, em, atm, am, uc, ac, ec, oc)
 	s := NewServer(e, l, logger)
 	return s.Run(ctx)
 }
