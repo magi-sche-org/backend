@@ -90,15 +90,11 @@ func NewAuthMiddleware(cfg *config.Config, logger *zap.Logger, au usecase.AuthUs
 
 // CORSHandler implements AuthMiddleware.
 func (am *authMiddleware) CORSHandler(next echo.HandlerFunc) echo.HandlerFunc {
-	// panic("unimplemented")
 	return middleware.CORSWithConfig(am.corsCfg)(next)
 }
 
 // CSRFHijackHandler implements AuthMiddleware.
 func (am *authMiddleware) CSRFHandler(next echo.HandlerFunc) echo.HandlerFunc {
-	// panic("unimplemented")
-	// err := next()
-	// return err
 	return middleware.CSRFWithConfig(am.csrfCfg)(next)
 }
 
@@ -149,32 +145,6 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 				return err
 			}
 		}
-
-		// if len(tokenString) < len("Bearer ") {
-		// 	am.logger.Warn("user auth failed", zap.Error(errors.New("token is invalid")))
-		// 	return apperror.NewUnauthorizedError(errors.New("token is invalid"), nil, "4000-02")
-		// }
-		// if tokenString[:len("Bearer ")] != "Bearer " {
-		// 	am.logger.Warn("user auth failed", zap.Error(errors.New("token is invalid")))
-		// 	return apperror.NewUnauthorizedError(errors.New("token is invalid"), nil, "4000-03")
-		// }
-		// tokenString = tokenString[len("Bearer "):]
-		// log.Println("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
-
-		// // userId, err := am.au.VerifyAccessToken(ctx, tokenString)
-		// if err != nil {
-		// 	if errors.Is(err, jwt.ErrTokenExpired) {
-		// 		refreshCookie, err := c.Cookie("refreshToken")
-		// 		if err != nil {
-		// 			am.logger.Warn("user auth failed", zap.Error(errors.New("refresh token must be set")))
-		// 			return apperror.NewUnauthorizedError(errors.New("refresh token must be set"), nil, "4000-03")
-		// 		}
-		// 		refreshTokenString := refreshCookie.Value
-		// 		am.au.RefreshToken(ctx, refreshTokenString)
-		// 	}
-		// 	return err
-		// }
-		// log.Println("pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
 
 		user, err := am.uu.FindUserByID(ctx, userId)
 		if err != nil {
