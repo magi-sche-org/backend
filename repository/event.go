@@ -163,10 +163,9 @@ func (er *eventRepository) FetchEventTimeUnits(ctx context.Context, tx *sql.Tx, 
 			return []entity.EventTimeUnit{}, err
 		}
 		etus[i] = entity.EventTimeUnit{
-			ID:          etuid,
-			EventID:     eventId,
-			TimeSlot:    etu.TimeSlot,
-			SlotSeconds: int(etu.SlotSeconds),
+			ID:       etuid,
+			EventID:  eventId,
+			TimeSlot: etu.TimeSlot,
 		}
 	}
 	return etus, nil
