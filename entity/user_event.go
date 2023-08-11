@@ -1,6 +1,10 @@
 package entity
 
-import "github.com/oklog/ulid/v2"
+import (
+	"time"
+
+	"github.com/oklog/ulid/v2"
+)
 
 type UserEventAnswer struct {
 	ID           ulid.ULID             `json:"id"`
@@ -18,6 +22,7 @@ type UserEventAnswerRequest struct {
 type UserEventAnswerResponse struct {
 	ID           string                        `json:"id"`
 	UserID       string                        `json:"userId"`
+	IsYourAnswer bool                          `json:"isYourAnswer"`
 	UserNickname string                        `json:"userNickname"`
 	Note         string                        `json:"note"`
 	Units        []UserEventAnswerUnitResponse `json:"units"`
@@ -45,4 +50,6 @@ type UserEventAnswerUnitRequest struct {
 type UserEventAnswerUnitResponse struct {
 	EventTimeUnitID string       `json:"eventTimeUnitId"`
 	Availability    Availability `json:"availability"`
+	StartsAt        time.Time    `json:"startsAt"`
+	EndsAt          time.Time    `json:"endsAt"`
 }

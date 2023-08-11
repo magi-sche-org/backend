@@ -24,10 +24,14 @@ func NewRouter(
 	e := echo.New()
 	// e.HTTPErrorHandler = em.ErrorHandler
 	e.Use(em.ErrorHandler)
+	e.Use(am.CORSHandler)
+	e.Use(am.CSRFHandler)
 	e.Use(atm.Handler)
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.String(200, "OK")
 	})
+	e.GET("/csrf", ac.CreateCSRFToken)
 
 	logger.SetRequestLoggerToEcho(e, zlogger)
 
@@ -40,16 +44,18 @@ func NewRouter(
 	og.GET("/google/callback", oc.Callback)
 
 	eg := e.Group("/events")
-	eg.POST("", ec.Create, am.Handler)
+	eg.Use(am.SessionHandler)
+	eg.POST("", ec.Create)
 	eig := eg.Group("/:event_id")
 	eig.GET("", ec.Retrieve)
 	// eg.PUT("", ec.Update)
 	// eg.DELETE(""", ec.Delete)
 
-	eiag := eig.Group("/user/attend")
-	eiag.Use(am.Handler)
-	eiag.POST("", ec.Attend)
-	eiag.PUT("", ec.Attend)
+	eiag := eig.Group("/user/answer")
+	eiag.Use(am.SessionHandler)
+	eiag.GET("", ec.RetrieveUserAnswer)
+	eiag.POST("", ec.CreateAnswer)
+	eiag.PUT("", ec.CreateAnswer)
 
 	// umg := e.Group("/user")
 	// ug.GET("", uc.Get)

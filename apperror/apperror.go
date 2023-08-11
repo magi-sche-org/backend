@@ -8,7 +8,7 @@ import (
 type ErrorCode string
 
 type AppError struct {
-	StatusCode     int       `json:"-"`
+	StatusCode     int       `json:"statusCode"`
 	ErrorCode      ErrorCode `json:"errorCode"`
 	Message        any       `json:"message"`
 	Detail         any       `json:"detail"`
@@ -41,6 +41,12 @@ const (
 	InvalidRequestHeader ErrorCode = "2004"
 	InvalidRequestCookie ErrorCode = "2005"
 	InvalidRequestForm   ErrorCode = "2006"
+
+	// CSRF
+	MissingCSRFToken ErrorCode = "2100"
+
+	// CORS
+	InvalidOrigin ErrorCode = "2200"
 
 	NotFound ErrorCode = "2900"
 
@@ -92,6 +98,15 @@ func NewInvalidRequestPathError(ierr error, detail any) *AppError {
 		ErrorCode:      InvalidRequestPath,
 		Message:        "invalid request path",
 		Detail:         detail,
+		internalDetail: ierr,
+	}
+}
+
+func NewMissingCSRFTokenError(ierr error) *AppError {
+	return &AppError{
+		StatusCode:     http.StatusBadRequest,
+		ErrorCode:      MissingCSRFToken,
+		Message:        "missing CSRF token",
 		internalDetail: ierr,
 	}
 }

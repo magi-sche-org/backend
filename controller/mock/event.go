@@ -34,20 +34,6 @@ func (m *MockEventController) EXPECT() *MockEventControllerMockRecorder {
 	return m.recorder
 }
 
-// Attend mocks base method.
-func (m *MockEventController) Attend(c echo.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Attend", c)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Attend indicates an expected call of Attend.
-func (mr *MockEventControllerMockRecorder) Attend(c interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Attend", reflect.TypeOf((*MockEventController)(nil).Attend), c)
-}
-
 // Create mocks base method.
 func (m *MockEventController) Create(c echo.Context) error {
 	m.ctrl.T.Helper()
@@ -62,6 +48,20 @@ func (mr *MockEventControllerMockRecorder) Create(c interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockEventController)(nil).Create), c)
 }
 
+// CreateAnswer mocks base method.
+func (m *MockEventController) CreateAnswer(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAnswer", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateAnswer indicates an expected call of CreateAnswer.
+func (mr *MockEventControllerMockRecorder) CreateAnswer(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAnswer", reflect.TypeOf((*MockEventController)(nil).CreateAnswer), c)
+}
+
 // Retrieve mocks base method.
 func (m *MockEventController) Retrieve(c echo.Context) error {
 	m.ctrl.T.Helper()
@@ -74,4 +74,18 @@ func (m *MockEventController) Retrieve(c echo.Context) error {
 func (mr *MockEventControllerMockRecorder) Retrieve(c interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Retrieve", reflect.TypeOf((*MockEventController)(nil).Retrieve), c)
+}
+
+// RetrieveUserAnswer mocks base method.
+func (m *MockEventController) RetrieveUserAnswer(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetrieveUserAnswer", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RetrieveUserAnswer indicates an expected call of RetrieveUserAnswer.
+func (mr *MockEventControllerMockRecorder) RetrieveUserAnswer(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveUserAnswer", reflect.TypeOf((*MockEventController)(nil).RetrieveUserAnswer), c)
 }
