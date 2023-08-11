@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
+	"github.com/geekcamp-vol11-team30/backend/apperror"
 	"github.com/geekcamp-vol11-team30/backend/db/models"
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/util"
@@ -15,6 +17,7 @@ type AuthRepository interface {
 	// tokenを登録するお
 	RegisterRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error
 	UpdateRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error
+	FetchRefreshToken(ctx context.Context, token string) (models.RefreshToken, error)
 }
 
 type authRepository struct {
@@ -45,7 +48,34 @@ func (ar *authRepository) RegisterRefreshToken(ctx context.Context, user entity.
 }
 
 // UpdateRefreshToken implements AuthRepository.
-func (*authRepository) UpdateRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error {
-	// TODO: implement
-	panic("unimplemented")
+func (ar *authRepository) UpdateRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error {
+	rt := &models.RefreshToken{
+		UserID:    util.ULIDToString(user.ID),
+		Token:     token,
+		ExpiresAt: expiresAt,
+		Revoked:   false,
+	}
+	_, err := rt.Update(ctx, ar.db, boil.Infer())
+
+	// _, err := models.RefreshTokens(models.RefreshTokenWhere.Token.EQ(token)).UpdateAll(ctx, ar.db, models.M{
+	// 	"token":      token,
+	// 	"expires_at": expiresAt,
+	// })
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ar *authRepository) FetchRefreshToken(ctx context.Context, token string) (models.RefreshToken, error) {
+	//get refreshToken
+	rt, err := models.RefreshTokens(models.RefreshTokenWhere.Token.EQ(token)).One(ctx, ar.db)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// Handle case when the refresh token is not found
+			return models.RefreshToken{}, apperror.NewNotFoundError(errors.New("refresh token not found"), nil)
+		}
+		return models.RefreshToken{}, err
+	}
+	return *rt, nil
 }
