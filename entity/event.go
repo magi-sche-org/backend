@@ -20,7 +20,7 @@ type EventRequest struct {
 	Name          string                 `json:"name"`
 	Description   string                 `json:"description"`
 	DurationAbout string                 `json:"durationAbout"`
-	UnitSeconds   int                    `json:"unitSeconds"`
+	UnitSeconds   int                    `json:"unitDuration"`
 	Units         []EventTimeUnitRequest `json:"units"`
 }
 type EventResponse struct {
@@ -29,7 +29,7 @@ type EventResponse struct {
 	Name          string                    `json:"name"`
 	Description   string                    `json:"description"`
 	DurationAbout string                    `json:"durationAbout"`
-	UnitSeconds   int                       `json:"unitSeconds"`
+	UnitSeconds   int                       `json:"unitDuration"`
 	Units         []EventTimeUnitResponse   `json:"units"`
 	UserAnswers   []UserEventAnswerResponse `json:"userAnswers"`
 }
@@ -41,11 +41,10 @@ type EventTimeUnit struct {
 	SlotSeconds int       `json:"slotSeconds"`
 }
 type EventTimeUnitRequest struct {
-	TimeSlot    time.Time `json:"timeSlot"`
-	SlotSeconds int       `json:"slotSeconds"`
+	TimeSlot time.Time `json:"timeSlot"`
 }
 type EventTimeUnitResponse struct {
-	ID          string    `json:"id"`
-	TimeSlot    time.Time `json:"timeSlot"`
-	SlotSeconds int       `json:"slotSeconds"`
+	ID       string    `json:"id"`
+	StartsAt time.Time `json:"startsAt"`
+	EndsAt   time.Time `json:"endsAt"`
 }
