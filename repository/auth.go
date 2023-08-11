@@ -14,7 +14,6 @@ import (
 type AuthRepository interface {
 	// tokenを登録するお
 	RegisterRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error
-	UpdateRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error
 	FetchRefreshToken(ctx context.Context, token string) (models.RefreshToken, error)
 	DeleteRefreshToken(ctx context.Context, token string) error
 }
@@ -40,26 +39,6 @@ func (ar *authRepository) RegisterRefreshToken(ctx context.Context, user entity.
 		Revoked:   false,
 	}
 	err := rt.Insert(ctx, ar.db, boil.Infer())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// UpdateRefreshToken implements AuthRepository.
-func (ar *authRepository) UpdateRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error {
-	rt := &models.RefreshToken{
-		UserID:    util.ULIDToString(user.ID),
-		Token:     token,
-		ExpiresAt: expiresAt,
-		Revoked:   false,
-	}
-	_, err := rt.Update(ctx, ar.db, boil.Infer())
-
-	// _, err := models.RefreshTokens(models.RefreshTokenWhere.Token.EQ(token)).UpdateAll(ctx, ar.db, models.M{
-	// 	"token":      token,
-	// 	"expires_at": expiresAt,
-	// })
 	if err != nil {
 		return err
 	}
