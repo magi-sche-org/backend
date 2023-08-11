@@ -23,65 +23,58 @@ import (
 
 // EventTimeUnit is an object representing the database table.
 type EventTimeUnit struct {
-	ID          string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	EventID     string    `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
-	TimeSlot    time.Time `boil:"time_slot" json:"time_slot" toml:"time_slot" yaml:"time_slot"`
-	SlotSeconds uint64    `boil:"slot_seconds" json:"slot_seconds" toml:"slot_seconds" yaml:"slot_seconds"`
-	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID        string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	EventID   string    `boil:"event_id" json:"event_id" toml:"event_id" yaml:"event_id"`
+	TimeSlot  time.Time `boil:"time_slot" json:"time_slot" toml:"time_slot" yaml:"time_slot"`
+	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *eventTimeUnitR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L eventTimeUnitL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var EventTimeUnitColumns = struct {
-	ID          string
-	EventID     string
-	TimeSlot    string
-	SlotSeconds string
-	CreatedAt   string
-	UpdatedAt   string
+	ID        string
+	EventID   string
+	TimeSlot  string
+	CreatedAt string
+	UpdatedAt string
 }{
-	ID:          "id",
-	EventID:     "event_id",
-	TimeSlot:    "time_slot",
-	SlotSeconds: "slot_seconds",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
+	ID:        "id",
+	EventID:   "event_id",
+	TimeSlot:  "time_slot",
+	CreatedAt: "created_at",
+	UpdatedAt: "updated_at",
 }
 
 var EventTimeUnitTableColumns = struct {
-	ID          string
-	EventID     string
-	TimeSlot    string
-	SlotSeconds string
-	CreatedAt   string
-	UpdatedAt   string
+	ID        string
+	EventID   string
+	TimeSlot  string
+	CreatedAt string
+	UpdatedAt string
 }{
-	ID:          "event_time_unit.id",
-	EventID:     "event_time_unit.event_id",
-	TimeSlot:    "event_time_unit.time_slot",
-	SlotSeconds: "event_time_unit.slot_seconds",
-	CreatedAt:   "event_time_unit.created_at",
-	UpdatedAt:   "event_time_unit.updated_at",
+	ID:        "event_time_unit.id",
+	EventID:   "event_time_unit.event_id",
+	TimeSlot:  "event_time_unit.time_slot",
+	CreatedAt: "event_time_unit.created_at",
+	UpdatedAt: "event_time_unit.updated_at",
 }
 
 // Generated where
 
 var EventTimeUnitWhere = struct {
-	ID          whereHelperstring
-	EventID     whereHelperstring
-	TimeSlot    whereHelpertime_Time
-	SlotSeconds whereHelperuint64
-	CreatedAt   whereHelpertime_Time
-	UpdatedAt   whereHelpertime_Time
+	ID        whereHelperstring
+	EventID   whereHelperstring
+	TimeSlot  whereHelpertime_Time
+	CreatedAt whereHelpertime_Time
+	UpdatedAt whereHelpertime_Time
 }{
-	ID:          whereHelperstring{field: "`event_time_unit`.`id`"},
-	EventID:     whereHelperstring{field: "`event_time_unit`.`event_id`"},
-	TimeSlot:    whereHelpertime_Time{field: "`event_time_unit`.`time_slot`"},
-	SlotSeconds: whereHelperuint64{field: "`event_time_unit`.`slot_seconds`"},
-	CreatedAt:   whereHelpertime_Time{field: "`event_time_unit`.`created_at`"},
-	UpdatedAt:   whereHelpertime_Time{field: "`event_time_unit`.`updated_at`"},
+	ID:        whereHelperstring{field: "`event_time_unit`.`id`"},
+	EventID:   whereHelperstring{field: "`event_time_unit`.`event_id`"},
+	TimeSlot:  whereHelpertime_Time{field: "`event_time_unit`.`time_slot`"},
+	CreatedAt: whereHelpertime_Time{field: "`event_time_unit`.`created_at`"},
+	UpdatedAt: whereHelpertime_Time{field: "`event_time_unit`.`updated_at`"},
 }
 
 // EventTimeUnitRels is where relationship names are stored.
@@ -122,8 +115,8 @@ func (r *eventTimeUnitR) GetUserEventAnswerUnits() UserEventAnswerUnitSlice {
 type eventTimeUnitL struct{}
 
 var (
-	eventTimeUnitAllColumns            = []string{"id", "event_id", "time_slot", "slot_seconds", "created_at", "updated_at"}
-	eventTimeUnitColumnsWithoutDefault = []string{"id", "event_id", "time_slot", "slot_seconds"}
+	eventTimeUnitAllColumns            = []string{"id", "event_id", "time_slot", "created_at", "updated_at"}
+	eventTimeUnitColumnsWithoutDefault = []string{"id", "event_id", "time_slot"}
 	eventTimeUnitColumnsWithDefault    = []string{"created_at", "updated_at"}
 	eventTimeUnitPrimaryKeyColumns     = []string{"id"}
 	eventTimeUnitGeneratedColumns      = []string{}
