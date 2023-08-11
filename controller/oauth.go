@@ -2,10 +2,12 @@
 package controller
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -26,14 +28,23 @@ type OauthController interface {
 }
 
 type oauthController struct {
-	cfg *config.Config
+	cfg       *config.Config
+	googleCfg *oauth2.Config
 	// uu  usecase.UserUsecase
 	// au  usecase.AuthUsecase
 }
 
 func NewOauthController(cfg *config.Config, uu usecase.UserUsecase, au usecase.AuthUsecase) OauthController {
+	gcfg := &oauth2.Config{
+		ClientID:     cfg.OAuth.Google.ClientID,
+		ClientSecret: cfg.OAuth.Google.ClientSecret,
+		Endpoint:     google.Endpoint,
+		RedirectURL:  "http://localhost:8080/oauth2/google/callback",
+		Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
+	}
 	return &oauthController{
-		cfg: cfg,
+		cfg:       cfg,
+		googleCfg: gcfg,
 		// uu:  uu,
 		// au:  au,
 	}
@@ -41,34 +52,29 @@ func NewOauthController(cfg *config.Config, uu usecase.UserUsecase, au usecase.A
 
 // RedirectToAuthPage implements OauthController.
 func (oc *oauthController) RedirectToAuthPage(c echo.Context) error {
-	// panic("unimplemented")
-	config := &oauth2.Config{
-		ClientID:     oc.cfg.OAuth.Google.ClientID,
-		ClientSecret: oc.cfg.OAuth.Google.ClientSecret,
-		Endpoint:     google.Endpoint,
-		RedirectURL:  "http://localhost:8080/oauth2/google/callback",
-		Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
+	state, err := util.MakeRandomStr(32)
+	if err != nil {
+		return err
 	}
-	url := config.AuthCodeURL("state", oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	c.SetCookie(&http.Cookie{
+		Name:     "state",
+		Value:    state,
+		Secure:   oc.cfg.Env != "dev",
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	})
+	url := oc.googleCfg.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 	return c.Redirect(302, url)
-
 }
 
 // Callback implements OauthController.
 func (oc *oauthController) Callback(c echo.Context) error {
 	ctx := c.Request().Context()
-	config := &oauth2.Config{
-		ClientID:     oc.cfg.OAuth.Google.ClientID,
-		ClientSecret: oc.cfg.OAuth.Google.ClientSecret,
-		Endpoint:     google.Endpoint,
-		RedirectURL:  "http://localhost:8080/oauth2/google/callback",
-		Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
-	}
-	httpClient, _ := config.Exchange(ctx, c.QueryParam("code"), oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	httpClient, _ := oc.googleCfg.Exchange(ctx, c.QueryParam("code"), oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 	if httpClient == nil {
 		return c.JSON(500, "error1")
 	}
-	client := config.Client(ctx, httpClient)
+	client := oc.googleCfg.Client(ctx, httpClient)
 
 	// service, err := v2.New(client)
 	service, err := v2.NewService(ctx, option.WithHTTPClient(client))
