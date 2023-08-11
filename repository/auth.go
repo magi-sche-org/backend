@@ -14,7 +14,8 @@ import (
 type AuthRepository interface {
 	// tokenを登録するお
 	RegisterRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error
-	UpdateRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error
+	FetchRefreshToken(ctx context.Context, token string) (models.RefreshToken, error)
+	DeleteRefreshToken(ctx context.Context, token string) error
 }
 
 type authRepository struct {
@@ -44,8 +45,20 @@ func (ar *authRepository) RegisterRefreshToken(ctx context.Context, user entity.
 	return nil
 }
 
-// UpdateRefreshToken implements AuthRepository.
-func (*authRepository) UpdateRefreshToken(ctx context.Context, user entity.User, token string, expiresAt time.Time) error {
-	// TODO: implement
-	panic("unimplemented")
+func (ar *authRepository) FetchRefreshToken(ctx context.Context, token string) (models.RefreshToken, error) {
+	//get refreshToken
+	rt, err := models.RefreshTokens(models.RefreshTokenWhere.Token.EQ(token)).One(ctx, ar.db)
+	if err != nil {
+		return models.RefreshToken{}, err
+	}
+	return *rt, nil
+}
+
+// DeleteRefreshToken implements AuthRepository.
+func (ar *authRepository) DeleteRefreshToken(ctx context.Context, token string) error {
+	_, err := models.RefreshTokens(models.RefreshTokenWhere.Token.EQ(token)).DeleteAll(ctx, ar.db)
+	if err != nil {
+		return err
+	}
+	return nil
 }
