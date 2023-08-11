@@ -23,10 +23,14 @@ func NewRouter(
 	e := echo.New()
 	// e.HTTPErrorHandler = em.ErrorHandler
 	e.Use(em.ErrorHandler)
+	e.Use(am.CORSHandler)
+	e.Use(am.CSRFHandler)
 	e.Use(atm.Handler)
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.String(200, "OK")
 	})
+	e.GET("/csrf", ac.CreateCSRFToken)
 
 	logger.SetRequestLoggerToEcho(e, zlogger)
 
@@ -35,14 +39,14 @@ func NewRouter(
 	e.POST("/token/refresh", ac.RefreshToken)
 
 	eg := e.Group("/events")
-	eg.POST("", ec.Create, am.Handler)
+	eg.POST("", ec.Create, am.SessionHandler)
 	eig := eg.Group("/:event_id")
 	eig.GET("", ec.Retrieve)
 	// eg.PUT("", ec.Update)
 	// eg.DELETE(""", ec.Delete)
 
 	eiag := eig.Group("/user/attend")
-	eiag.Use(am.Handler)
+	eiag.Use(am.SessionHandler)
 	eiag.POST("", ec.Attend)
 	eiag.PUT("", ec.Attend)
 

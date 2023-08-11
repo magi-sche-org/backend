@@ -34,16 +34,44 @@ func (m *MockAuthMiddleware) EXPECT() *MockAuthMiddlewareMockRecorder {
 	return m.recorder
 }
 
-// Handler mocks base method.
-func (m *MockAuthMiddleware) Handler(next echo.HandlerFunc) echo.HandlerFunc {
+// CORSHandler mocks base method.
+func (m *MockAuthMiddleware) CORSHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Handler", next)
+	ret := m.ctrl.Call(m, "CORSHandler", next)
 	ret0, _ := ret[0].(echo.HandlerFunc)
 	return ret0
 }
 
-// Handler indicates an expected call of Handler.
-func (mr *MockAuthMiddlewareMockRecorder) Handler(next interface{}) *gomock.Call {
+// CORSHandler indicates an expected call of CORSHandler.
+func (mr *MockAuthMiddlewareMockRecorder) CORSHandler(next interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handler", reflect.TypeOf((*MockAuthMiddleware)(nil).Handler), next)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CORSHandler", reflect.TypeOf((*MockAuthMiddleware)(nil).CORSHandler), next)
+}
+
+// CSRFHandler mocks base method.
+func (m *MockAuthMiddleware) CSRFHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CSRFHandler", next)
+	ret0, _ := ret[0].(echo.HandlerFunc)
+	return ret0
+}
+
+// CSRFHandler indicates an expected call of CSRFHandler.
+func (mr *MockAuthMiddlewareMockRecorder) CSRFHandler(next interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CSRFHandler", reflect.TypeOf((*MockAuthMiddleware)(nil).CSRFHandler), next)
+}
+
+// SessionHandler mocks base method.
+func (m *MockAuthMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SessionHandler", next)
+	ret0, _ := ret[0].(echo.HandlerFunc)
+	return ret0
+}
+
+// SessionHandler indicates an expected call of SessionHandler.
+func (mr *MockAuthMiddlewareMockRecorder) SessionHandler(next interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SessionHandler", reflect.TypeOf((*MockAuthMiddleware)(nil).SessionHandler), next)
 }

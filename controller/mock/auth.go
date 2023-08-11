@@ -34,6 +34,20 @@ func (m *MockAuthController) EXPECT() *MockAuthControllerMockRecorder {
 	return m.recorder
 }
 
+// CreateCSRFToken mocks base method.
+func (m *MockAuthController) CreateCSRFToken(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateCSRFToken", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateCSRFToken indicates an expected call of CreateCSRFToken.
+func (mr *MockAuthControllerMockRecorder) CreateCSRFToken(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCSRFToken", reflect.TypeOf((*MockAuthController)(nil).CreateCSRFToken), c)
+}
+
 // CreateUnregisteredUserAndToken mocks base method.
 func (m *MockAuthController) CreateUnregisteredUserAndToken(c echo.Context) error {
 	m.ctrl.T.Helper()

@@ -54,7 +54,8 @@ func (ec *eventController) Create(c echo.Context) error {
 	res := eventToEventResponse(event)
 
 	c.Response().Header().Set("Location", "/events/"+res.ID)
-	return c.JSON(http.StatusCreated, res)
+	return util.JSONResponse(c, http.StatusCreated, res)
+	// return c.JSON(http.StatusCreated, res)
 }
 
 // Retrieve implements EventController.
@@ -74,7 +75,8 @@ func (ec *eventController) Retrieve(c echo.Context) error {
 		return err
 	}
 	res := eventToEventResponse(event)
-	return c.JSON(http.StatusOK, res)
+	return util.JSONResponse(c, http.StatusOK, res)
+	// return c.JSON(http.StatusOK, res)
 }
 
 // Attend implements EventController.
@@ -112,7 +114,8 @@ func (ec *eventController) Attend(c echo.Context) error {
 	res := ueaToUeaResponse(uea)
 
 	c.Response().Header().Set("Location", "/events/"+eventIdStr+"/attend")
-	return c.JSON(http.StatusCreated, res)
+	return util.JSONResponse(c, http.StatusCreated, res)
+	// return c.JSON(http.StatusCreated, res)
 }
 
 func eventRequestToEvent(er entity.EventRequest) entity.Event {

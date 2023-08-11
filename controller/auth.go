@@ -2,9 +2,12 @@
 package controller
 
 import (
+	"net/http"
+
 	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/labstack/echo/v4"
 )
 
@@ -13,6 +16,8 @@ type AuthController interface {
 	CreateUnregisteredUserAndToken(c echo.Context) error
 	// トークン更新
 	RefreshToken(c echo.Context) error
+	// CSRFトークン発行
+	CreateCSRFToken(c echo.Context) error
 }
 
 type authController struct {
@@ -40,7 +45,8 @@ func (ac *authController) CreateUnregisteredUserAndToken(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(200, token)
+	return util.JSONResponse(c, http.StatusOK, token)
+	// return c.JSON(200, token)
 	// panic("unimplemented")
 }
 
@@ -55,5 +61,14 @@ func (ac *authController) RefreshToken(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(200, token)
+	// http.StatusNotFound
+	return util.JSONResponse(c, http.StatusOK, token)
+	// return c.JSON(200, token)
+}
+
+// CreateCSRFToken implements AuthController.
+func (*authController) CreateCSRFToken(c echo.Context) error {
+	token := c.Get("csrf").(string)
+	// return c.JSON(200, token)
+	return util.JSONResponse(c, http.StatusOK, token)
 }
