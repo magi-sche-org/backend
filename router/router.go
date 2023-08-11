@@ -39,16 +39,18 @@ func NewRouter(
 	e.POST("/token/refresh", ac.RefreshToken)
 
 	eg := e.Group("/events")
-	eg.POST("", ec.Create, am.SessionHandler)
+	eg.Use(am.SessionHandler)
+	eg.POST("", ec.Create)
 	eig := eg.Group("/:event_id")
 	eig.GET("", ec.Retrieve)
 	// eg.PUT("", ec.Update)
 	// eg.DELETE(""", ec.Delete)
 
-	eiag := eig.Group("/user/attend")
+	eiag := eig.Group("/user/answer")
 	eiag.Use(am.SessionHandler)
-	eiag.POST("", ec.Attend)
-	eiag.PUT("", ec.Attend)
+	eiag.GET("", ec.RetrieveUserAnswer)
+	eiag.POST("", ec.CreateAnswer)
+	eiag.PUT("", ec.CreateAnswer)
 
 	// umg := e.Group("/user")
 	// ug.GET("", uc.Get)

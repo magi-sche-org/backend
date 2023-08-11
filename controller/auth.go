@@ -45,6 +45,7 @@ func (ac *authController) CreateUnregisteredUserAndToken(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	util.SetTokenCookie(c, *ac.cfg, token)
 	return util.JSONResponse(c, http.StatusOK, token)
 	// return c.JSON(200, token)
 	// panic("unimplemented")

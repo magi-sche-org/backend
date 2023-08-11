@@ -102,7 +102,8 @@ func (au *authUsecase) VerifyAccessToken(ctx context.Context, tokenString string
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			au.logger.Warn("user auth failed", zap.Error(err))
-			return ulid.ULID{}, apperror.NewTokenExpiredError(err, nil)
+			// return ulid.ULID{}, apperror.NewTokenExpiredError(err, nil)
+			return ulid.ULID{}, err
 		}
 		au.logger.Warn("user auth failed", zap.Error(err))
 		return ulid.ULID{}, apperror.NewUnauthorizedError(err, nil, "4000-1")

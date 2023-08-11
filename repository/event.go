@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/geekcamp-vol11-team30/backend/apperror"
 	"github.com/geekcamp-vol11-team30/backend/db/models"
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/util"
@@ -24,8 +25,10 @@ type EventRepository interface {
 	FetchEvent(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) (entity.Event, error)
 	// イベントのタイムスロットを取得する
 	FetchEventTimeUnits(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) ([]entity.EventTimeUnit, error)
-	// イベントのユーザー回答(Unit付き)を取得する
+	// イベントの全ユーザー回答(Unit付き)を取得する
 	FetchEventAnswersWithUnits(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) ([]entity.UserEventAnswer, error)
+	// イベントの指定ユーザー回答(Unit無し)を取得する
+	FetchEventAnswer(ctx context.Context, tx *sql.Tx, eventId ulid.ULID, userId ulid.ULID) (entity.UserEventAnswer, error)
 
 	// イベント参加回答更新
 	UpdateEventAnswer(ctx context.Context, tx *sql.Tx, answer entity.UserEventAnswer) (entity.UserEventAnswer, error)
@@ -160,10 +163,9 @@ func (er *eventRepository) FetchEventTimeUnits(ctx context.Context, tx *sql.Tx, 
 			return []entity.EventTimeUnit{}, err
 		}
 		etus[i] = entity.EventTimeUnit{
-			ID:          etuid,
-			EventID:     eventId,
-			TimeSlot:    etu.TimeSlot,
-			SlotSeconds: int(etu.SlotSeconds),
+			ID:       etuid,
+			EventID:  eventId,
+			TimeSlot: etu.TimeSlot,
 		}
 	}
 	return etus, nil
@@ -183,6 +185,8 @@ func (er *eventRepository) FetchEventAnswersWithUnits(ctx context.Context, tx *s
 			// join EventTimeUnit
 		),
 		models.UserEventAnswerWhere.EventID.EQ(util.ULIDToString(eventId)),
+		// order by created at
+		qm.OrderBy("created_at"),
 	).All(ctx, exc)
 	if err != nil {
 		return []entity.UserEventAnswer{}, err
@@ -215,6 +219,51 @@ func (er *eventRepository) FetchEventAnswersWithUnits(ctx context.Context, tx *s
 	}
 	log.Println("!!!!!!!!!!!!!!!!!!!!!!", answers, answersm)
 	return answers, nil
+}
+
+// FetchEventAnswer implements EventRepository.
+func (er *eventRepository) FetchEventAnswer(ctx context.Context, tx *sql.Tx, eventId ulid.ULID, userId ulid.ULID) (entity.UserEventAnswer, error) {
+	var exc boil.ContextExecutor = tx
+	if tx == nil {
+		exc = er.db
+	}
+
+	ueam, err := models.UserEventAnswers(
+		qm.Where("event_id = ? AND user_id = ?", util.ULIDToString(eventId), util.ULIDToString(userId)),
+		qm.Load(
+			models.UserEventAnswerRels.UserEventAnswerUnits,
+			qm.OrderBy("created_at"),
+		),
+		models.UserEventAnswerWhere.EventID.EQ(util.ULIDToString(eventId)),
+		qm.OrderBy("created_at"),
+	).One(ctx, exc)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return entity.UserEventAnswer{}, apperror.NewNotFoundError(err, nil)
+		}
+		return entity.UserEventAnswer{}, err
+	}
+	ueaId, _ := util.ULIDFromString(ueam.ID)
+	units := make([]entity.UserEventAnswerUnit, len(ueam.R.UserEventAnswerUnits))
+	for i, unitm := range ueam.R.UserEventAnswerUnits {
+		unitId, _ := util.ULIDFromString(unitm.ID)
+		etuId, _ := util.ULIDFromString(unitm.EventTimeUnitID)
+		units[i] = entity.UserEventAnswerUnit{
+			ID:                unitId,
+			UserEventAnswerID: userId,
+			EventTimeUnitID:   etuId,
+			Availability:      entity.Availability(unitm.Availability),
+		}
+	}
+	return entity.UserEventAnswer{
+		ID:           ueaId,
+		UserID:       userId,
+		EventID:      eventId,
+		UserNickname: ueam.UserNickname,
+		Note:         ueam.Note,
+		Units:        units,
+		// Units:        []entity.UserEventAnswerUnit{},
+	}, nil
 }
 
 // UpdateEventAnswer implements EventRepository.

@@ -1,5 +1,5 @@
 # build for deploy
-FROM golang:1.20-bullseye as deploy-builder
+FROM golang:1.21-bullseye as deploy-builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY --from=deploy-builder /app/app /app
 COPY --from=deploy-builder /app/healthcheck /app
 
 # for migration
-FROM golang:1.20-bullseye as migrate
+FROM golang:1.21-bullseye as migrate
 
 WORKDIR /app
 COPY --from=deploy-builder /app/migrate /app
@@ -29,7 +29,7 @@ CMD ["./migrate"]
 
 
 # for local development with air
-FROM golang:1.20-bullseye as dev
+FROM golang:1.21-bullseye as dev
 WORKDIR /app
 RUN go install github.com/cosmtrek/air@latest && \
     go install github.com/volatiletech/sqlboiler/v4@latest && \
