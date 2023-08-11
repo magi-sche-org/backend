@@ -23,15 +23,15 @@ func (ev *eventValidator) Validate(event entity.Event) error {
 		),
 		validation.Field(&event.Description,
 			validation.Required.Error("説明は必須です"),
-			validation.Length(1, 1000).Error("説明は1000文字以内です"),
+			validation.Length(0, 1000).Error("説明は1000文字以内です"),
 		),
 		validation.Field(&event.DurationAbout,
 			validation.Required.Error("開催時間は必須です"),
 			validation.Length(1, 100).Error("開催時間は100文字以内です"),
 		),
 		validation.Field(&event.UnitSeconds,
-			validation.Required.Error("開催時間は必須です"),
-			validation.Min(1).Error("開催時間は1秒以上です"),
+			validation.Required.Error("時間単位は30分,1時間,1日です"),
+			//validation.Min(30).Error("時間単位は30分,1時間,1日です"),
 		),
 	)
 }
