@@ -88,10 +88,7 @@ func NewAuthMiddleware(cfg *config.Config, logger *zap.Logger, au usecase.AuthUs
 // CORSHandler implements AuthMiddleware.
 func (am *authMiddleware) CORSHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	// panic("unimplemented")
-	return middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	})(next)
+	return middleware.CORSWithConfig(am.corsCfg)(next)
 }
 
 // CSRFHijackHandler implements AuthMiddleware.
