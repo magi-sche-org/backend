@@ -2,6 +2,7 @@
 package middleware
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -12,8 +13,10 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/apperror"
 	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/oklog/ulid/v2"
 	"go.uber.org/zap"
 )
 
@@ -103,26 +106,75 @@ func (am *authMiddleware) CSRFHandler(next echo.HandlerFunc) echo.HandlerFunc {
 func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx := c.Request().Context()
-		// Bearer token format: Bearer <token>
-		tokenString := c.Request().Header.Get("Authorization")
-		if tokenString == "" {
-			am.logger.Warn("user auth failed", zap.Error(errors.New("token is empty")))
-			return apperror.NewUnauthorizedError(errors.New("token is empty"), nil, "4000-01")
+		tokenCookie, err := c.Cookie("accessToken")
+
+		needCheckRefreshToken := false
+		userId := ulid.ULID{}
+
+		if err == nil { // access tokenがあるとき
+			tokenString := tokenCookie.Value
+			if tokenString == "" { // 空ならぶっとばす
+				am.logger.Warn("user auth failed", zap.Error(errors.New("token is empty")))
+				return apperror.NewUnauthorizedError(errors.New("token is empty"), nil, "4000-02")
+			}
+			log.Println(tokenString)
+			userId, err = am.verifyAccessToken(ctx, tokenString)
+			if err != nil {
+				if !errors.Is(err, jwt.ErrTokenExpired) {
+					return err
+				}
+				needCheckRefreshToken = true
+			}
+		} else { // access token がない・あるいは読み込みエラーのとき
+			if !errors.Is(err, http.ErrNoCookie) { // cookieが無い以外のエラー
+				return apperror.NewInternalError(err, nil, "access token cookie fetch error")
+			}
+			am.logger.Info("access token not found in cookie. try to check refresh token")
+			needCheckRefreshToken = true
+
 		}
-		if len(tokenString) < len("Bearer ") {
-			am.logger.Warn("user auth failed", zap.Error(errors.New("token is invalid")))
-			return apperror.NewUnauthorizedError(errors.New("token is invalid"), nil, "4000-02")
+		if needCheckRefreshToken {
+			refreshCookie, err := c.Cookie("refreshToken")
+			if err != nil {
+				am.logger.Warn("user auth failed", zap.Error(errors.New("refresh token must be set")))
+				return apperror.NewUnauthorizedError(errors.New("refresh token must be set"), nil, "4000-03")
+			}
+			refreshTokenString := refreshCookie.Value
+			token, err := am.au.RefreshToken(ctx, refreshTokenString)
+			if err != nil {
+				return err
+			}
+			userId, err = am.verifyAccessToken(ctx, token.AccessToken)
+			if err != nil {
+				return err
+			}
 		}
-		if tokenString[:len("Bearer ")] != "Bearer " {
-			am.logger.Warn("user auth failed", zap.Error(errors.New("token is invalid")))
-			return apperror.NewUnauthorizedError(errors.New("token is invalid"), nil, "4000-03")
-		}
-		tokenString = tokenString[len("Bearer "):]
-		log.Println(tokenString)
-		userId, err := am.au.VerifyAccessToken(ctx, tokenString)
-		if err != nil {
-			return err
-		}
+
+		// if len(tokenString) < len("Bearer ") {
+		// 	am.logger.Warn("user auth failed", zap.Error(errors.New("token is invalid")))
+		// 	return apperror.NewUnauthorizedError(errors.New("token is invalid"), nil, "4000-02")
+		// }
+		// if tokenString[:len("Bearer ")] != "Bearer " {
+		// 	am.logger.Warn("user auth failed", zap.Error(errors.New("token is invalid")))
+		// 	return apperror.NewUnauthorizedError(errors.New("token is invalid"), nil, "4000-03")
+		// }
+		// tokenString = tokenString[len("Bearer "):]
+		// log.Println("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+
+		// // userId, err := am.au.VerifyAccessToken(ctx, tokenString)
+		// if err != nil {
+		// 	if errors.Is(err, jwt.ErrTokenExpired) {
+		// 		refreshCookie, err := c.Cookie("refreshToken")
+		// 		if err != nil {
+		// 			am.logger.Warn("user auth failed", zap.Error(errors.New("refresh token must be set")))
+		// 			return apperror.NewUnauthorizedError(errors.New("refresh token must be set"), nil, "4000-03")
+		// 		}
+		// 		refreshTokenString := refreshCookie.Value
+		// 		am.au.RefreshToken(ctx, refreshTokenString)
+		// 	}
+		// 	return err
+		// }
+		// log.Println("pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
 
 		user, err := am.uu.FindUserByID(ctx, userId)
 		if err != nil {
@@ -140,4 +192,17 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 		err = next(c)
 		return err
 	}
+}
+
+func (am *authMiddleware) verifyAccessToken(ctx context.Context, tokenString string) (userId ulid.ULID, err error) {
+	userId, err = am.au.VerifyAccessToken(ctx, tokenString) // check
+	if err != nil {
+		if errors.Is(err, jwt.ErrSignatureInvalid) {
+			err = fmt.Errorf("user auth failed, invalid access token: %w", err)
+			return ulid.ULID{}, apperror.NewUnauthorizedError(err, nil, "4000-03")
+		} else { // その他はエラー
+			return ulid.ULID{}, err
+		}
+	}
+	return userId, nil
 }
