@@ -135,6 +135,12 @@ func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (e
 		return entity.Token{}, apperror.NewTokenExpiredError(errors.New("refresh token expired"), nil)
 	}
 
+	// Revoke the previous refresh token
+	err = au.ar.DeleteRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return entity.Token{}, err
+	}
+
 	// Get the user associated with the refresh token
 	userID, err := util.ULIDFromString(refreshTokenRecord.UserID)
 	if err != nil {
@@ -147,18 +153,8 @@ func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (e
 		return entity.Token{}, err
 	}
 
-	newRefreshToken, err := generateRefreshToken()
-	if err != nil {
-		return entity.Token{}, err
-	}
-
-	newRefreshTokenExpires := now.Add(time.Duration(au.cfg.RefreshExpireMinutes) * time.Minute)
-	err = au.ar.UpdateRefreshToken(ctx, entity.User{ID: userID}, newRefreshToken, newRefreshTokenExpires)
-
 	return entity.Token{
-		AccessToken:           newAccessToken.AccessToken,
-		AccessTokenExpiredAt:  time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
-		RefreshToken:          newRefreshToken,
-		RefreshTokenExpiredAt: newRefreshTokenExpires,
+		AccessToken:          newAccessToken.AccessToken,
+		AccessTokenExpiredAt: time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
 	}, nil
 }
