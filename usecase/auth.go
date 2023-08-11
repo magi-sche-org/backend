@@ -95,7 +95,6 @@ func generateRefreshToken() (string, error) {
 }
 
 // VerifyAccessToken implements AuthUsecase.
-// アクセストークンを検証する
 func (au *authUsecase) VerifyAccessToken(ctx context.Context, tokenString string) (userId ulid.ULID, err error) {
 	token, err := au.jwtparser.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(au.cfg.SecretKey), nil
@@ -120,24 +119,46 @@ func (au *authUsecase) VerifyAccessToken(ctx context.Context, tokenString string
 
 // RefreshToken implements AuthUsecase.
 func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (entity.Token, error) {
-
-	refreshTokenClaims, err := au.VerifyAccessToken(ctx, refreshToken)
+	refreshTokenRecord, err := au.ar.FetchRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return entity.Token{}, err
 	}
 
-	userId, err := util.ULIDFromString(refreshTokenClaims.Subject)
+	// Verify if the refresh token is revoked
+	if refreshTokenRecord.Revoked {
+		return entity.Token{}, apperror.NewUnauthorizedError(errors.New("refresh token revoked"), nil, "4000-3")
+	}
+
+	// Verify if the refresh token has expired
+	now := time.Now()
+	if refreshTokenRecord.ExpiresAt.Before(now) {
+		return entity.Token{}, apperror.NewTokenExpiredError(errors.New("refresh token expired"), nil)
+	}
+
+	// Get the user associated with the refresh token
+	userID, err := util.ULIDFromString(refreshTokenRecord.UserID)
 	if err != nil {
 		return entity.Token{}, err
 	}
 
-	newAccessToken, err := au.CreateToken(ctx, entity.User{ID: userId})
+	// Generate new access and refresh tokens
+	newAccessToken, err := au.CreateToken(ctx, entity.User{ID: userID})
+	if err != nil {
+		return entity.Token{}, err
+	}
+
 	newRefreshToken, err := generateRefreshToken()
+	if err != nil {
+		return entity.Token{}, err
+	}
+
+	newRefreshTokenExpires := now.Add(time.Duration(au.cfg.RefreshExpireMinutes) * time.Minute)
+	err = au.ar.UpdateRefreshToken(ctx, entity.User{ID: userID}, newRefreshToken, newRefreshTokenExpires)
 
 	return entity.Token{
 		AccessToken:           newAccessToken.AccessToken,
 		AccessTokenExpiredAt:  time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
 		RefreshToken:          newRefreshToken,
-		RefreshTokenExpiredAt: time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
+		RefreshTokenExpiredAt: newRefreshTokenExpires,
 	}, nil
 }
