@@ -95,6 +95,7 @@ func generateRefreshToken() (string, error) {
 }
 
 // VerifyAccessToken implements AuthUsecase.
+// アクセストークンを検証する
 func (au *authUsecase) VerifyAccessToken(ctx context.Context, tokenString string) (userId ulid.ULID, err error) {
 	token, err := au.jwtparser.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(au.cfg.SecretKey), nil
@@ -119,7 +120,24 @@ func (au *authUsecase) VerifyAccessToken(ctx context.Context, tokenString string
 
 // RefreshToken implements AuthUsecase.
 func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (entity.Token, error) {
-	// TODO: implement
-	panic("unimplemented")
 
+	refreshTokenClaims, err := au.VerifyAccessToken(ctx, refreshToken)
+	if err != nil {
+		return entity.Token{}, err
+	}
+
+	userId, err := util.ULIDFromString(refreshTokenClaims.Subject)
+	if err != nil {
+		return entity.Token{}, err
+	}
+
+	newAccessToken, err := au.CreateToken(ctx, entity.User{ID: userId})
+	newRefreshToken, err := generateRefreshToken()
+
+	return entity.Token{
+		AccessToken:           newAccessToken.AccessToken,
+		AccessTokenExpiredAt:  time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
+		RefreshToken:          newRefreshToken,
+		RefreshTokenExpiredAt: time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
+	}, nil
 }
