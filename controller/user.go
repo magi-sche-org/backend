@@ -6,6 +6,7 @@ import (
 
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/labstack/echo/v4"
 )
 
@@ -33,5 +34,6 @@ func (uc *userController) Register(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
-	return c.JSON(http.StatusOK, res)
+	return util.JSONResponse(c, http.StatusOK, res)
+	// return c.JSON(http.StatusOK, res)
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/geekcamp-vol11-team30/backend/appcontext"
+	"github.com/labstack/echo/v4"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -27,4 +28,11 @@ func ULIDFromString(id string) (ulid.ULID, error) {
 
 func ULIDToString(id ulid.ULID) string {
 	return strings.ToLower(id.String())
+}
+
+func JSONResponse(c echo.Context, code int, data any) error {
+	return c.JSON(code, echo.Map{
+		"statusCode": code,
+		"data":       data,
+	})
 }
