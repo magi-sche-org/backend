@@ -12,22 +12,26 @@ type IEventValidator interface {
 type eventValidator struct{}
 
 func NewEventValidator() IEventValidator {
-	return &eventValidotor{}
+	return &eventValidator{}
 }
 
 func (ev *eventValidator) Validate(event entity.Event) error {
 	return validation.ValidateStruct(&event,
 		validation.Field(&event.Name,
-			validation.Required,
+			validation.Required.Error("タイトルは必須です"),
+			validation.Length(1, 100).Error("タイトルは100文字以内です"),
 		),
 		validation.Field(&event.Description,
-			validation.Required,
+			validation.Required.Error("説明は必須です"),
+			validation.Length(1, 1000).Error("説明は1000文字以内です"),
 		),
 		validation.Field(&event.DurationAbout,
-			validation.Required,
+			validation.Required.Error("開催時間は必須です"),
+			validation.Length(1, 100).Error("開催時間は100文字以内です"),
 		),
 		validation.Field(&event.UnitSeconds,
-			validation.Required,
+			validation.Required.Error("開催時間は必須です"),
+			validation.Min(1).Error("開催時間は1秒以上です"),
 		),
 	)
 }
