@@ -118,7 +118,8 @@ func (au *authUsecase) VerifyAccessToken(ctx context.Context, tokenString string
 }
 
 // RefreshToken implements AuthUsecase.
-func (*authUsecase) RefreshToken(ctx context.Context, refreshToken string) (entity.Token, error) {
+func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (entity.Token, error) {
 	// TODO: implement
 	panic("unimplemented")
+
 }
