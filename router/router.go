@@ -35,11 +35,17 @@ func NewRouter(
 
 	logger.SetRequestLoggerToEcho(e, zlogger)
 
+	eug := e.Group("/user")
+	eug.Use(am.SessionHandler)
+	eug.GET("/events", uc.GetEvents)
+	eug.GET("/external_events", uc.GetExternalCalendars)
+
 	e.POST("/users", uc.Register)
 	e.POST("/token", ac.CreateUnregisteredUserAndToken)
 	e.POST("/token/refresh", ac.RefreshToken)
 
 	og := e.Group("/oauth2")
+	og.Use(am.IfLoginSessionHandler)
 	og.GET("/google", oc.RedirectToAuthPage)
 	og.GET("/google/callback", oc.Callback)
 

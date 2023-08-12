@@ -12,6 +12,8 @@ import (
 
 type UserController interface {
 	Register(c echo.Context) error
+	GetEvents(c echo.Context) error
+	GetExternalCalendars(c echo.Context) error
 }
 
 type userController struct {
@@ -36,4 +38,14 @@ func (uc *userController) Register(c echo.Context) error {
 	}
 	return util.JSONResponse(c, http.StatusOK, res)
 	// return c.JSON(http.StatusOK, res)
+}
+
+// GetEvents implements UserController.
+func (*userController) GetEvents(c echo.Context) error {
+	panic("unimplemented")
+}
+
+// GetExternalCalendars implements UserController.
+func (*userController) GetExternalCalendars(c echo.Context) error {
+	panic("unimplemented")
 }

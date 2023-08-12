@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Port                 int    `env:"PORT" envDefault:"80"`
 	Env                  string `env:"ENV" envDefault:"dev"`
+	BaseURL              string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	SecretKey            string `env:"SECRET_KEY" envDefault:"secret"`
 	AccessExpireMinutes  int    `env:"ACCESS_TOKEN_EXPIRE_MINUTES" envDefault:"5"`
 	RefreshExpireMinutes int    `env:"REFRESH_TOKEN_EXPIRE_MINUTES" envDefault:"43200"`
@@ -27,7 +28,8 @@ type MySQL struct {
 	DBName   string `env:"DATABASE"`
 }
 type OAuth struct {
-	Google Client `envPrefix:"GOOGLE_"`
+	Google           Client `envPrefix:"GOOGLE_"`
+	DefaultReturnURL string `env:"DEFAULT_RETURN_URL" envDefault:"http://localhost:3000"`
 }
 type Client struct {
 	ClientID     string `env:"CLIENT_ID"`

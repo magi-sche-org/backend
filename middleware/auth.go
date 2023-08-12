@@ -24,6 +24,7 @@ type AuthMiddleware interface {
 	CORSHandler(next echo.HandlerFunc) echo.HandlerFunc
 	CSRFHandler(next echo.HandlerFunc) echo.HandlerFunc
 	SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
+	IfLoginSessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 type authMiddleware struct {
@@ -161,6 +162,30 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 
 		err = next(c)
 		return err
+	}
+}
+
+// IfLoginSessionHandler implements AuthMiddleware.
+func (am *authMiddleware) IfLoginSessionHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	// atc, err := c.Cookie("accessToken")
+	return func(c echo.Context) error {
+		_, err := c.Cookie("accessToken")
+		if err != nil {
+			if !errors.Is(err, http.ErrNoCookie) {
+				// return next(c)
+				return err
+			}
+			// return err
+		}
+		_, err = c.Cookie("refreshToken")
+		if err != nil {
+			if errors.Is(err, http.ErrNoCookie) {
+				return next(c)
+				// return err
+			}
+			return err
+		}
+		return am.SessionHandler(next)(c)
 	}
 }
 

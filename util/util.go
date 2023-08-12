@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/appcontext"
 	"github.com/geekcamp-vol11-team30/backend/config"
@@ -16,6 +17,10 @@ import (
 func GenerateULID(ctx context.Context) ulid.ULID {
 	actx := appcontext.Extract(ctx)
 	id, _ := ulid.New(ulid.Timestamp(actx.Now), rand.Reader)
+	return id
+}
+func GenerateULIDNow() ulid.ULID {
+	id, _ := ulid.New(ulid.Timestamp(time.Now()), rand.Reader)
 	return id
 }
 
@@ -43,28 +48,28 @@ func SetTokenCookie(c echo.Context, cfg config.Config, token entity.Token) {
 	c.SetCookie(&http.Cookie{
 		Name:  "accessToken",
 		Value: token.AccessToken,
-		// Path:       "",
+		Path:  "/",
 		// Domain:     "",
 		Expires: token.AccessTokenExpiredAt,
 		// RawExpires: "",
 		// MaxAge:     0,
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		// Raw:        "",
 		// Unparsed:   []string{},
 	})
 	c.SetCookie(&http.Cookie{
 		Name:  "refreshToken",
 		Value: token.RefreshToken,
-		// Path:       "",
+		Path:  "/",
 		// Domain:     "",
 		Expires: token.RefreshTokenExpiredAt,
 		// RawExpires: "",
 		// MaxAge:     0,
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		// Raw:        "",
 		// Unparsed:   []string{},
 	})

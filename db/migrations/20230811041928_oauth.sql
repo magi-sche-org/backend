@@ -8,15 +8,16 @@ CREATE TABLE `oauth_provider` (
     `client_secret` VARCHAR(128) NOT NULL,
     `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     `updated_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_oauth_provider_unique` UNIQUE (`name`)
 );
 CREATE TABLE `oauth_user_info` (
     `id` CHAR(26) NOT NULL,
     `user_id` CHAR(26) NOT NULL,
     `provider_id` CHAR(26) NOT NULL,
-    `provider_user_id` VARCHAR(128) NOT NULL,
-    `access_token` VARCHAR(128) NOT NULL,
-    `refresh_token` VARCHAR(128) NOT NULL,
+    `provider_uid` VARCHAR(128) NOT NULL,
+    `access_token` VARCHAR(2048) NOT NULL,
+    `refresh_token` VARCHAR(512) NOT NULL,
     `access_token_expires_at` DATETIME(6) NOT NULL,
     `refresh_token_expires_at` DATETIME(6),
     `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -24,22 +25,13 @@ CREATE TABLE `oauth_user_info` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_oauth_user_info_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `fk_oauth_user_info_provider_id` FOREIGN KEY (`provider_id`) REFERENCES `oauth_provider` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fk_oauth_user_info_unique` UNIQUE (`provider_id`, `provider_user_id`)
+    CONSTRAINT `fk_oauth_user_info_provider_unique` UNIQUE (`user_id`, `provider_id`),
+    CONSTRAINT `fk_oauth_user_info_unique` UNIQUE (`provider_id`, `provider_uid`)
 );
--- CREATE TABLE `oauth_refresh_token` (
---     `id` CHAR(26) NOT NULL,
---     `user_id` CHAR(26) NOT NULL,
---     `provider_id` CHAR(26) NOT NULL,
---     `refresh_token` VARCHAR(128) NOT NULL,
---     `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
---     `updated_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
---     PRIMARY KEY (`id`),
---     CONSTRAINT `fk_oauth_refresh_token_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
---     CONSTRAINT `fk_oauth_refresh_token_provider_id` FOREIGN KEY (`provider_id`) REFERENCES `oauth_provider` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
---     CONSTRAINT `fk_oauth_refresh_token_unique` UNIQUE (`provider_id`, `refresh_token`)
--- );
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
 SELECT 'down SQL query';
+DROP TABLE `oauth_user_info`;
+DROP TABLE `oauth_provider`;
 -- +goose StatementEnd

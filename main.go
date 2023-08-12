@@ -45,10 +45,12 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	ur := repository.NewUserRepository(db)
 	ar := repository.NewAuthRepository(db)
 	er := repository.NewEventRepository(db)
+	oar := repository.NewOauthRepository(db)
 	uv := validator.NewUserValidator()
 	uu := usecase.NewUserUsecase(ur, uv)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
 	eu := usecase.NewEventUsecase(er)
+	oau := usecase.NewOauthUsecase(cfg, oar, ur, uu)
 
 	em := middleware.NewErrorMiddleware(logger, uu)
 	atm := middleware.NewAccessTimeMiddleware()
@@ -57,7 +59,7 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	uc := controller.NewUserController(uu)
 	ac := controller.NewAuthController(cfg, uu, au)
 	ec := controller.NewEventController(eu)
-	oc := controller.NewOauthController(cfg, uu, au)
+	oc := controller.NewOauthController(cfg, oau, uu, au)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {

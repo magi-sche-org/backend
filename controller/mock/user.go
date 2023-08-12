@@ -34,6 +34,34 @@ func (m *MockUserController) EXPECT() *MockUserControllerMockRecorder {
 	return m.recorder
 }
 
+// GetEvents mocks base method.
+func (m *MockUserController) GetEvents(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEvents", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetEvents indicates an expected call of GetEvents.
+func (mr *MockUserControllerMockRecorder) GetEvents(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEvents", reflect.TypeOf((*MockUserController)(nil).GetEvents), c)
+}
+
+// GetExternalCalendars mocks base method.
+func (m *MockUserController) GetExternalCalendars(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetExternalCalendars", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetExternalCalendars indicates an expected call of GetExternalCalendars.
+func (mr *MockUserControllerMockRecorder) GetExternalCalendars(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExternalCalendars", reflect.TypeOf((*MockUserController)(nil).GetExternalCalendars), c)
+}
+
 // Register mocks base method.
 func (m *MockUserController) Register(c echo.Context) error {
 	m.ctrl.T.Helper()

@@ -40,6 +40,7 @@ func (ur *userRepository) Create(ctx context.Context, user entity.User) (entity.
 	if err != nil {
 		return entity.User{}, err
 	}
+
 	return ur.modelToEntity(u)
 	// if err != nil {
 	// 	return entity.User{}, err
@@ -98,7 +99,16 @@ func (ur *userRepository) FindAll(ctx context.Context) ([]entity.User, error) {
 
 // Update implements UserRepository.
 func (ur *userRepository) Update(ctx context.Context, user entity.User) error {
-	panic("unimplemented")
+	um := &models.User{
+		ID:           util.ULIDToString(user.ID),
+		Name:         user.Name,
+		IsRegistered: user.IsRegistered,
+	}
+	err := um.Upsert(ctx, ur.db, boil.Infer(), boil.Infer())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ur *userRepository) modelToEntity(m *models.User) (entity.User, error) {

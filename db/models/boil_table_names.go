@@ -7,6 +7,8 @@ var TableNames = struct {
 	Event               string
 	EventTimeUnit       string
 	GooseDBVersion      string
+	OauthProvider       string
+	OauthUserInfo       string
 	RefreshToken        string
 	User                string
 	UserEventAnswer     string
@@ -15,6 +17,8 @@ var TableNames = struct {
 	Event:               "event",
 	EventTimeUnit:       "event_time_unit",
 	GooseDBVersion:      "goose_db_version",
+	OauthProvider:       "oauth_provider",
+	OauthUserInfo:       "oauth_user_info",
 	RefreshToken:        "refresh_token",
 	User:                "user",
 	UserEventAnswer:     "user_event_answer",
