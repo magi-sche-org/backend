@@ -53,17 +53,17 @@ func (uu *userUsecase) FindUserByID(ctx context.Context, id ulid.ULID) (entity.U
 // Register implements UserUsecase.
 func (uu *userUsecase) Register(ctx context.Context, user entity.User) (entity.UserResponse, error) {
 	panic("unimplemented")
-	err := uu.uv.Validate(user)
-	if err != nil {
-		return entity.UserResponse{}, err
-	}
-	newUser, err := uu.ur.Create(ctx, user)
-	res := entity.UserResponse{
-		// ID:        newUser.ID,
-		Name: newUser.Name,
-		// SlackID:   newUser.SlackID,
-		// CreatedAt: newUser.CreatedAt,
-		// UpdatedAt: newUser.UpdatedAt,
-	}
-	return res, err
+	// err := uu.uv.Validate(user)
+	// if err != nil {
+	// 	return entity.UserResponse{}, err
+	// }
+	// newUser, err := uu.ur.Create(ctx, user)
+	// res := entity.UserResponse{
+	// 	// ID:        newUser.ID,
+	// 	Name: newUser.Name,
+	// 	// SlackID:   newUser.SlackID,
+	// 	// CreatedAt: newUser.CreatedAt,
+	// 	// UpdatedAt: newUser.UpdatedAt,
+	// }
+	// return res, err
 }

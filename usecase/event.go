@@ -145,7 +145,7 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 		return entity.UserEventAnswer{}, err
 	}
 	ansUnits := reqAnswer.Units
-	for i, _ := range ansUnits {
+	for i := range ansUnits {
 		ansUnits[i].UserEventAnswerID = newAnswer.ID
 	}
 	// イベント参加回答時間単位登録
