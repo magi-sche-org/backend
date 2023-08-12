@@ -2,9 +2,8 @@ package usecase
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/apperror"
@@ -86,12 +85,13 @@ func (au *authUsecase) CreateToken(ctx context.Context, user entity.User) (entit
 }
 
 func generateRefreshToken() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", nil
-	}
-	return hex.EncodeToString(b), nil
+	// b := make([]byte, 32)
+	// _, err := rand.Read(b)
+	// if err != nil {
+	// 	return "", nil
+	// }
+	// return hex.EncodeToString(b), nil
+	return util.MakeRandomStr(32)
 }
 
 // VerifyAccessToken implements AuthUsecase.
@@ -119,26 +119,22 @@ func (au *authUsecase) VerifyAccessToken(ctx context.Context, tokenString string
 
 // RefreshToken implements AuthUsecase.
 func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (entity.Token, error) {
+	log.Println(refreshToken)
 	refreshTokenRecord, err := au.ar.FetchRefreshToken(ctx, refreshToken)
+	log.Println("rrrrrr", refreshTokenRecord)
 	if err != nil {
-		return entity.Token{}, err
+		return entity.Token{}, apperror.NewUnauthorizedError(errors.New("refresh token record not found"), nil, "4000-333")
 	}
 
 	// Verify if the refresh token is revoked
 	if refreshTokenRecord.Revoked {
-		return entity.Token{}, apperror.NewUnauthorizedError(errors.New("refresh token revoked"), nil, "4000-3")
+		return entity.Token{}, apperror.NewUnauthorizedError(errors.New("refresh token revoked"), nil, "4000-4")
 	}
 
 	// Verify if the refresh token has expired
 	now := time.Now()
 	if refreshTokenRecord.ExpiresAt.Before(now) {
 		return entity.Token{}, apperror.NewTokenExpiredError(errors.New("refresh token expired"), nil)
-	}
-
-	// Revoke the previous refresh token
-	err = au.ar.DeleteRefreshToken(ctx, refreshToken)
-	if err != nil {
-		return entity.Token{}, err
 	}
 
 	// Get the user associated with the refresh token
@@ -153,8 +149,15 @@ func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (e
 		return entity.Token{}, err
 	}
 
-	return entity.Token{
-		AccessToken:          newAccessToken.AccessToken,
-		AccessTokenExpiredAt: time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
-	}, nil
+	// Revoke the previous refresh token
+	err = au.ar.DeleteRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return entity.Token{}, err
+	}
+	return newAccessToken, nil
+
+	// return entity.Token{
+	// 	AccessToken:          newAccessToken.AccessToken,
+	// 	AccessTokenExpiredAt: time.Now().Add(time.Duration(au.cfg.AccessExpireMinutes) * time.Minute),
+	// }, nil
 }

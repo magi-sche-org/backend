@@ -13,6 +13,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/apperror"
 	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -141,6 +142,7 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 			if err != nil {
 				return err
 			}
+			util.SetTokenCookie(c, *am.cfg, token)
 			userId, err = am.verifyAccessToken(ctx, token.AccessToken)
 			if err != nil {
 				return err

@@ -58,7 +58,7 @@ func NewRouter(
 	// eg.DELETE(""", ec.Delete)
 
 	eiag := eig.Group("/user/answer")
-	eiag.Use(am.SessionHandler)
+	// eiag.Use(am.SessionHandler)
 	eiag.GET("", ec.RetrieveUserAnswer)
 	eiag.POST("", ec.CreateAnswer)
 	eiag.PUT("", ec.CreateAnswer)
