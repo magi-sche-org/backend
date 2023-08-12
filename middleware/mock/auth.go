@@ -62,6 +62,20 @@ func (mr *MockAuthMiddlewareMockRecorder) CSRFHandler(next interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CSRFHandler", reflect.TypeOf((*MockAuthMiddleware)(nil).CSRFHandler), next)
 }
 
+// IfLoginSessionHandler mocks base method.
+func (m *MockAuthMiddleware) IfLoginSessionHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IfLoginSessionHandler", next)
+	ret0, _ := ret[0].(echo.HandlerFunc)
+	return ret0
+}
+
+// IfLoginSessionHandler indicates an expected call of IfLoginSessionHandler.
+func (mr *MockAuthMiddlewareMockRecorder) IfLoginSessionHandler(next interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IfLoginSessionHandler", reflect.TypeOf((*MockAuthMiddleware)(nil).IfLoginSessionHandler), next)
+}
+
 // SessionHandler mocks base method.
 func (m *MockAuthMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	m.ctrl.T.Helper()
