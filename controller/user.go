@@ -4,6 +4,7 @@ package controller
 import (
 	"net/http"
 
+	"github.com/geekcamp-vol11-team30/backend/appcontext"
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
 	"github.com/geekcamp-vol11-team30/backend/util"
@@ -46,6 +47,11 @@ func (*userController) GetEvents(c echo.Context) error {
 }
 
 // GetExternalCalendars implements UserController.
-func (*userController) GetExternalCalendars(c echo.Context) error {
-	panic("unimplemented")
+func (uc *userController) GetExternalCalendars(c echo.Context) error {
+	ctx := c.Request().Context()
+	user, err := appcontext.Extract(ctx).GetUser()
+	if err != nil {
+		return err
+	}
+
 }

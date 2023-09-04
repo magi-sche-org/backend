@@ -7,6 +7,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/db/models"
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/util"
+	"github.com/oklog/ulid/v2"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
@@ -16,7 +17,7 @@ type OauthRepository interface {
 	FetchProviderByName(ctx context.Context, name string) (entity.OauthProvider, error)
 	RegisterOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error)
 	FetchOauthUserInfos(ctx context.Context, user entity.User) ([]entity.OauthUserInfo, error)
-	FetchOauthUserInfo(ctx context.Context, providerName string, user entity.User) (entity.OauthUserInfo, error)
+	FetchOauthUserInfo(ctx context.Context, providerId ulid.ULID, user entity.User) (entity.OauthUserInfo, error)
 }
 
 type oauthRepository struct {
@@ -127,9 +128,9 @@ func (oar *oauthRepository) FetchOauthUserInfos(ctx context.Context, user entity
 }
 
 // FetchOauthUserInfo implements OauthRepository.
-func (oar *oauthRepository) FetchOauthUserInfo(ctx context.Context, providerName string, user entity.User) (entity.OauthUserInfo, error) {
+func (oar *oauthRepository) FetchOauthUserInfo(ctx context.Context, providerId ulid.ULID, user entity.User) (entity.OauthUserInfo, error) {
 	ouim, err := models.OauthUserInfos(
-		models.OauthUserInfoWhere.ProviderUID.EQ(providerName),
+		models.OauthUserInfoWhere.ProviderUID.EQ(util.ULIDToString(providerId)),
 		models.OauthUserInfoWhere.UserID.EQ(util.ULIDToString(user.ID)),
 	).One(ctx, oar.db)
 	if err != nil {
@@ -137,7 +138,7 @@ func (oar *oauthRepository) FetchOauthUserInfo(ctx context.Context, providerName
 	}
 	id, _ := util.ULIDFromString(ouim.ID)
 	userId, _ := util.ULIDFromString(ouim.UserID)
-	providerId, _ := util.ULIDFromString(ouim.ProviderID)
+	// providerId, _ := util.ULIDFromString(ouim.ProviderID)
 	return entity.OauthUserInfo{
 		ID:                    id,
 		UserId:                userId,
