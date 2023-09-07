@@ -71,5 +71,7 @@ func (ac *authController) RefreshToken(c echo.Context) error {
 func (*authController) CreateCSRFToken(c echo.Context) error {
 	token := c.Get("csrf").(string)
 	// return c.JSON(200, token)
-	return util.JSONResponse(c, http.StatusOK, token)
+	return util.JSONResponse(c, http.StatusOK, map[string]string{
+		"csrf": token,
+	})
 }
