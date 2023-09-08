@@ -15,7 +15,7 @@ type Config struct {
 	RefreshExpireMinutes int    `env:"REFRESH_TOKEN_EXPIRE_MINUTES" envDefault:"43200"`
 	MySQL                MySQL  `envPrefix:"MYSQL_"`
 	CORS                 CORS   `envPrefix:"CORS_"`
-	CSRF                 CSRF   `envPrefix:"CORS_"`
+	CSRF                 CSRF   `envPrefix:"CSRF_"`
 }
 
 type MySQL struct {

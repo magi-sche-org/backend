@@ -62,6 +62,7 @@ func (em *errorMiddleware) ErrorHandler(next echo.HandlerFunc) echo.HandlerFunc 
 			if ae, ok := err.(*apperror.AppError); ok {
 				return c.JSON(ae.StatusCode, ae)
 			}
+			em.logger.Error("errorMiddleware", zap.Error(err))
 			return c.JSON(http.StatusInternalServerError, apperror.NewUnknownError(err, nil))
 		}
 		return nil

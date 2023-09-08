@@ -38,9 +38,9 @@ type authMiddleware struct {
 
 func NewAuthMiddleware(cfg *config.Config, logger *zap.Logger, au usecase.AuthUsecase, uu usecase.UserUsecase) AuthMiddleware {
 	corsCfg := middleware.CORSConfig{
-		Skipper: func(c echo.Context) bool {
-			return cfg.CSRF.Disabled
-		},
+		// Skipper: func(c echo.Context) bool {
+		// 	return cfg.CORS.Disabled
+		// },
 		AllowOrigins: cfg.CORS.Origins,
 		// AllowOriginFunc: func(origin string) (bool, error) {
 		// },

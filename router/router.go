@@ -24,9 +24,7 @@ func NewRouter(
 	// e.HTTPErrorHandler = em.ErrorHandler
 	e.Use(em.ErrorHandler)
 	e.Use(am.CORSHandler)
-	if !config.CSRF.Disabled {
-		e.Use(am.CSRFHandler)
-	}
+	e.Use(am.CSRFHandler)
 	e.Use(atm.Handler)
 
 	e.GET("/health", func(c echo.Context) error {
