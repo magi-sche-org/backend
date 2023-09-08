@@ -1,0 +1,151 @@
+openapi: 3.1.0
+x-stoplight:
+  id: mrpg6s4b4ome1
+info:
+  title: magische
+  version: '1.0'
+  summary: magische backend
+  description: magische backend
+  contact: {}
+  license:
+    identifier: Apache-2.0
+    name: Apache 2.0
+servers:
+  - url: 'http://localhost:8080'
+    description: local
+paths:
+  /health:
+    get:
+      summary: health check
+      tags:
+        - utility
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/OK'
+      operationId: get-health
+      description: health check
+  /csrf:
+    get:
+      summary: get csrf token
+      tags:
+        - utility
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/CSRF'
+      operationId: get-csrf
+      description: CSRFトークンの値を返す
+    parameters: []
+  /token:
+    parameters: []
+    post:
+      summary: ''
+      operationId: post-token
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    default: 200
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/Tokens'
+      description: 匿名ユーザートークン発行
+      parameters: []
+      tags:
+        - auth
+components:
+  schemas:
+    OK:
+      title: OK
+      x-stoplight:
+        id: rtt595amcwkld
+      type: string
+      default: ok
+      example: ok
+    CSRF:
+      title: CSRF
+      x-stoplight:
+        id: x74m27vdpcco7
+      type: object
+      properties:
+        csrf:
+          type: string
+          example: 0K0IJZP31LcSj4eebvfXypqxIJb5sOiL
+    AccessToken:
+      title: AccessToken
+      x-stoplight:
+        id: ghscezroemm8j
+      type: string
+      description: |-
+        JWT access token
+        有効期限あり
+      example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMWg5dGdmZjI5cWZjbnhxNjdrM2Y5bWN0ZSIsImV4cCI6MTY5NDE4MDg1NSwiaWF0IjoxNjk0MTgwNTU1fQ.HeyVLVI7RbEnI_gO4ZY5X_kUyen5oGpgZMv3m0vJmmo
+    RefreshToken:
+      title: RefreshToken
+      x-stoplight:
+        id: opus99054s5pe
+      type: string
+      description: |-
+        Refresh Token
+        期限あり
+      example: 94102296712b3e67a6ef1fdd14b44de8c2e1ed8639d29c7846c3ff67716fdf9f
+    AccessTokenExpiredAt:
+      title: AccessTokenExpiredAt
+      x-stoplight:
+        id: k9rpug0cdcfn3
+      type: string
+      format: date-time
+      example: '2023-09-08T13:47:35.86814763Z'
+      description: AccessTokenの期限
+    RefreshTokenExpiredAt:
+      title: AccessTokenExpiredAt
+      type: string
+      format: date-time
+      example: '2023-09-08T13:47:35.86814763Z'
+      description: RefreshTokenの期限
+    Tokens:
+      title: Tokens
+      x-stoplight:
+        id: r7lxs7803cz5p
+      type: object
+      properties:
+        accessToken:
+          $ref: '#/components/schemas/AccessToken'
+        refreshToken:
+          $ref: '#/components/schemas/RefreshToken'
+        accessTokenExpiredAt:
+          $ref: '#/components/schemas/AccessTokenExpiredAt'
+        refreshTokenExpiredAt:
+          $ref: '#/components/schemas/RefreshTokenExpiredAt'
+tags:
+  - name: utility
+  - name: auth
+  - name: event
+  - name: user
