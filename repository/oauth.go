@@ -18,6 +18,7 @@ type OauthRepository interface {
 	RegisterOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error)
 	FetchOauthUserInfos(ctx context.Context, user entity.User) ([]entity.OauthUserInfo, error)
 	FetchOauthUserInfo(ctx context.Context, providerId ulid.ULID, user entity.User) (entity.OauthUserInfo, error)
+	FetchUserInfoByUid(ctx context.Context, providerId ulid.ULID, uid string) (*entity.OauthUserInfo, error)
 }
 
 type oauthRepository struct {
@@ -140,6 +141,28 @@ func (oar *oauthRepository) FetchOauthUserInfo(ctx context.Context, providerId u
 	userId, _ := util.ULIDFromString(ouim.UserID)
 	// providerId, _ := util.ULIDFromString(ouim.ProviderID)
 	return entity.OauthUserInfo{
+		ID:                    id,
+		UserId:                userId,
+		ProviderId:            providerId,
+		ProviderUid:           ouim.ProviderUID,
+		AccessToken:           ouim.AccessToken,
+		RefreshToken:          ouim.RefreshToken,
+		AccessTokenExpiresAt:  ouim.AccessTokenExpiresAt,
+		RefreshTokenExpiresAt: ouim.RefreshTokenExpiresAt.Ptr(),
+	}, nil
+}
+
+func (oar *oauthRepository) FetchUserInfoByUid(ctx context.Context, providerId ulid.ULID, uid string) (*entity.OauthUserInfo, error) {
+	ouim, err := models.OauthUserInfos(
+		models.OauthUserInfoWhere.ProviderUID.EQ(uid),
+		models.OauthUserInfoWhere.ProviderID.EQ(util.ULIDToString(providerId)),
+	).One(ctx, oar.db)
+	if err != nil {
+		return nil, err
+	}
+	id, _ := util.ULIDFromString(ouim.ID)
+	userId, _ := util.ULIDFromString(ouim.UserID)
+	return &entity.OauthUserInfo{
 		ID:                    id,
 		UserId:                userId,
 		ProviderId:            providerId,

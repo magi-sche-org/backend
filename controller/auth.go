@@ -18,6 +18,8 @@ type AuthController interface {
 	RefreshToken(c echo.Context) error
 	// CSRFトークン発行
 	CreateCSRFToken(c echo.Context) error
+	// logout
+	Logout(c echo.Context) error
 }
 
 type authController struct {
@@ -77,5 +79,12 @@ func (*authController) CreateCSRFToken(c echo.Context) error {
 	}
 	return util.JSONResponse(c, http.StatusOK, map[string]string{
 		"csrf": token,
+	})
+}
+
+func (ac *authController) Logout(c echo.Context) error {
+	util.DeleteTokenCookie(c, *ac.cfg)
+	return util.JSONResponse(c, http.StatusOK, map[string]string{
+		"message": "logout",
 	})
 }

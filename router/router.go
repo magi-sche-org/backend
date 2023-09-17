@@ -45,6 +45,7 @@ func NewRouter(
 	// 匿名ユーザー登録
 	e.POST("/token", ac.CreateUnregisteredUserAndToken)
 	e.POST("/token/refresh", ac.RefreshToken)
+	e.POST("/logout", ac.Logout)
 
 	// Oauth関連
 	og := e.Group("/oauth2")

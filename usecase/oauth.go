@@ -85,6 +85,23 @@ func (oau *oauthUsecase) FetchAndRegisterOauthUserInfo(ctx context.Context, toke
 	if err != nil {
 		return entity.User{}, err
 	}
+
+	{
+		op, err := oau.oar.FetchProviderByName(ctx, "google")
+		if err != nil {
+			return entity.User{}, err
+		}
+		oaui, err := oau.oar.FetchUserInfoByUid(ctx, op.ID, userInfo.UserId)
+		if err != nil {
+			return entity.User{}, err
+		}
+		if oaui != nil {
+			user, err := oau.ur.Find(ctx, oaui.UserId)
+			return user, err
+			// return entity.User{}, fmt.Errorf("already registered")
+		}
+	}
+
 	user := entity.User{
 		Name:         userInfo.Email,
 		IsRegistered: true,
