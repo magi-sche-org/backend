@@ -17,7 +17,7 @@ type Config struct {
 	MySQL                MySQL  `envPrefix:"MYSQL_"`
 	OAuth                OAuth  `envPrefix:"OAUTH_"`
 	CORS                 CORS   `envPrefix:"CORS_"`
-	CSRF                 CSRF   `envPrefix:"CORS_"`
+	CSRF                 CSRF   `envPrefix:"CSRF_"`
 }
 
 type MySQL struct {
