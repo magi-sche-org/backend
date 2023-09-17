@@ -20,7 +20,6 @@ func NewRouter(
 	ec controller.EventController,
 	oc controller.OauthController,
 ) *echo.Echo {
-	// TODO: CORSの設定などを足す
 	e := echo.New()
 	// e.HTTPErrorHandler = em.ErrorHandler
 	e.Use(em.ErrorHandler)
@@ -35,32 +34,43 @@ func NewRouter(
 
 	logger.SetRequestLoggerToEcho(e, zlogger)
 
+	// ログイン中ユーザー関連
 	eug := e.Group("/user")
 	eug.Use(am.SessionHandler)
 	eug.GET("/events", uc.GetEvents)
 	eug.GET("/external_events", uc.GetExternalCalendars)
 
-	e.POST("/users", uc.Register)
+	// // ユーザー登録
+	// e.POST("/users", uc.Register)
+	// 匿名ユーザー登録
 	e.POST("/token", ac.CreateUnregisteredUserAndToken)
 	e.POST("/token/refresh", ac.RefreshToken)
 
+	// Oauth関連
 	og := e.Group("/oauth2")
 	og.Use(am.IfLoginSessionHandler)
 	og.GET("/google", oc.RedirectToAuthPage)
 	og.GET("/google/callback", oc.Callback)
 
+	// イベント関連
 	eg := e.Group("/events")
 	eg.Use(am.SessionHandler)
+	// イベント作成
 	eg.POST("", ec.Create)
+
 	eig := eg.Group("/:event_id")
+	// 特定イベント情報取得
 	eig.GET("", ec.Retrieve)
 	// eg.PUT("", ec.Update)
 	// eg.DELETE(""", ec.Delete)
 
 	eiag := eig.Group("/user/answer")
 	// eiag.Use(am.SessionHandler)
+	// 特定イベントのユーザーの回答取得
 	eiag.GET("", ec.RetrieveUserAnswer)
+	// 特定イベントのユーザーの回答作成
 	eiag.POST("", ec.CreateAnswer)
+	// 特定イベントのユーザーの回答更新（POSTと同じ）
 	eiag.PUT("", ec.CreateAnswer)
 
 	// umg := e.Group("/user")

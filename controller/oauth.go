@@ -54,6 +54,12 @@ func NewOauthController(cfg *config.Config, oau usecase.OauthUsecase, uu usecase
 
 // RedirectToAuthPage implements OauthController.
 func (oc *oauthController) RedirectToAuthPage(c echo.Context) error {
+	// get next parameter if exists
+	next := c.QueryParam("next")
+	if next == "" {
+		next = oc.cfg.OAuth.DefaultReturnURL
+	}
+
 	url, state, err := oc.oau.GetGoogleAuthURL(c.Request().Context())
 	if err != nil {
 		return err
@@ -61,6 +67,13 @@ func (oc *oauthController) RedirectToAuthPage(c echo.Context) error {
 	c.SetCookie(&http.Cookie{
 		Name:     "state",
 		Value:    state,
+		Secure:   oc.cfg.Env != "dev",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+	c.SetCookie(&http.Cookie{
+		Name:     "next",
+		Value:    next,
 		Secure:   oc.cfg.Env != "dev",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
@@ -79,6 +92,20 @@ func (oc *oauthController) Callback(c echo.Context) error {
 	// remove state
 	c.SetCookie(&http.Cookie{
 		Name:     "state",
+		Value:    "",
+		Secure:   oc.cfg.Env != "dev",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+	// get next
+	nextCookie, err := c.Cookie("next")
+	if err != nil {
+		return err
+	}
+	// remove next
+	c.SetCookie(&http.Cookie{
+		Name:     "next",
 		Value:    "",
 		Secure:   oc.cfg.Env != "dev",
 		HttpOnly: true,
@@ -142,7 +169,8 @@ func (oc *oauthController) Callback(c echo.Context) error {
 	// 	// return c.JSON(500, "error5")
 	// }
 	// // events
-	return c.Redirect(302, oc.cfg.OAuth.DefaultReturnURL)
+	// return c.Redirect(302, oc.cfg.OAuth.DefaultReturnURL)
+	return c.Redirect(302, nextCookie.Value)
 
 	// return c.JSON(200, map[string]interface{}{
 	// 	// "userinfo": userInfo,

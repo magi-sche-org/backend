@@ -47,7 +47,7 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	er := repository.NewEventRepository(db)
 	oar := repository.NewOauthRepository(db)
 	uv := validator.NewUserValidator()
-	uu := usecase.NewUserUsecase(ur, uv)
+	uu := usecase.NewUserUsecase(ur, oar, uv)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
 	eu := usecase.NewEventUsecase(er)
 	oau := usecase.NewOauthUsecase(cfg, oar, ur, uu)
