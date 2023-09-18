@@ -6,8 +6,7 @@ services:
     container_name: magische_app
     image: magische
     build:
-      args:
-        - target=deploy
+      target: deploy
     env_file:
       - .env
     volumes:
