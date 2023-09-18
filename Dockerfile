@@ -19,7 +19,7 @@ WORKDIR /app
 COPY --from=deploy-builder /app/app /app/app
 COPY --from=deploy-builder /app/healthcheck /app/healthcheck
 
-CMD [ "./app" ]
+CMD [ "/app/app" ]
 
 
 # for migration
