@@ -21,4 +21,5 @@ type OauthUserInfo struct {
 	RefreshToken          string
 	AccessTokenExpiresAt  time.Time
 	RefreshTokenExpiresAt *time.Time
+	Provider              *OauthProvider
 }

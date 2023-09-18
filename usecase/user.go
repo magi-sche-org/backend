@@ -2,9 +2,11 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/repository"
+	"github.com/geekcamp-vol11-team30/backend/service"
 	"github.com/geekcamp-vol11-team30/backend/validator"
 	"github.com/oklog/ulid/v2"
 )
@@ -13,20 +15,22 @@ type UserUsecase interface {
 	CreateAnonymousUser(ctx context.Context) (entity.User, error)
 	FindUserByID(ctx context.Context, id ulid.ULID) (entity.User, error)
 	// Register(ctx context.Context, user entity.User) ([]entity.CalendarEvent, error)
-	FetchExternalCalendars(ctx context.Context, user entity.User)
+	FetchExternalCalendars(ctx context.Context, user entity.User) ([][]entity.CalendarEvent, error)
 }
 
 type userUsecase struct {
 	ur  repository.UserRepository
 	oar repository.OauthRepository
 	uv  validator.UserValidator
+	gs  service.GoogleService
 }
 
-func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, uv validator.UserValidator) UserUsecase {
+func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, uv validator.UserValidator, gs service.GoogleService) UserUsecase {
 	return &userUsecase{
 		ur:  ur,
 		oar: oar,
 		uv:  uv,
+		gs:  gs,
 	}
 }
 
@@ -87,6 +91,27 @@ func (uu *userUsecase) FindUserByID(ctx context.Context, id ulid.ULID) (entity.U
 // }
 
 // FetchExternalCalendars implements UserUsecase.
-func (*userUsecase) FetchExternalCalendars(ctx context.Context, user entity.User) {
-	panic("unimplemented")
+func (uu *userUsecase) FetchExternalCalendars(ctx context.Context, user entity.User) ([][]entity.CalendarEvent, error) {
+	ouis, err := uu.oar.FetchOauthUserInfos(ctx, user)
+	if err != nil {
+		return [][]entity.CalendarEvent{}, fmt.Errorf("failed to fetch oauth user infos: %w", err)
+	}
+	fmt.Printf("ouis: %+v\n%+v\n", ouis, ouis[0].Provider)
+
+	eventsAll := [][]entity.CalendarEvent{}
+
+	for _, oui := range ouis {
+		fmt.Printf("oui: %+v\n", oui)
+		// oui.Provider
+		if oui.Provider.Name == "google" {
+			events, err := uu.gs.GetEvents(ctx, oui)
+			if err != nil {
+				return [][]entity.CalendarEvent{}, fmt.Errorf("failed to get events: %w", err)
+			}
+			fmt.Printf("events: %+v\n", events)
+			eventsAll = append(eventsAll, events)
+		}
+	}
+
+	return eventsAll, nil
 }

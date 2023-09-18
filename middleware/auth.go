@@ -134,7 +134,7 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 		if needCheckRefreshToken {
 			refreshCookie, err := c.Cookie("refreshToken")
 			if err != nil {
-				am.logger.Warn("user auth failed", zap.Error(errors.New("refresh token must be set")))
+				am.logger.Warn("user auth failed", zap.Error(fmt.Errorf("refresh token must be set: %w", err)))
 				return apperror.NewUnauthorizedError(errors.New("refresh token must be set"), nil, "4000-03")
 			}
 			refreshTokenString := refreshCookie.Value

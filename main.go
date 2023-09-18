@@ -11,6 +11,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/middleware"
 	"github.com/geekcamp-vol11-team30/backend/repository"
 	"github.com/geekcamp-vol11-team30/backend/router"
+	"github.com/geekcamp-vol11-team30/backend/service"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
 	"github.com/geekcamp-vol11-team30/backend/validator"
 	_ "github.com/go-sql-driver/mysql"
@@ -46,8 +47,9 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	ar := repository.NewAuthRepository(db)
 	er := repository.NewEventRepository(db)
 	oar := repository.NewOauthRepository(db)
+	gs := service.NewGoogleService(cfg, oar)
 	uv := validator.NewUserValidator()
-	uu := usecase.NewUserUsecase(ur, oar, uv)
+	uu := usecase.NewUserUsecase(ur, oar, uv, gs)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
 	eu := usecase.NewEventUsecase(er)
 	oau := usecase.NewOauthUsecase(cfg, oar, ur, uu)

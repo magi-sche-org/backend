@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/geekcamp-vol11-team30/backend/apperror"
-	"github.com/geekcamp-vol11-team30/backend/db/models"
 	"github.com/geekcamp-vol11-team30/backend/entity"
+	"github.com/geekcamp-vol11-team30/backend/repository/internal/converter"
+	"github.com/geekcamp-vol11-team30/backend/repository/internal/models"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/oklog/ulid/v2"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -127,19 +128,12 @@ func (er *eventRepository) FetchEvent(ctx context.Context, tx *sql.Tx, eventId u
 	if err != nil {
 		return entity.Event{}, err
 	}
-	oid, err := util.ULIDFromString(eventM.OwnerID)
+
+	e, err := converter.EventModelToEntity(ctx, eventM, nil, nil)
 	if err != nil {
-		return entity.Event{}, err
+		return entity.Event{}, fmt.Errorf("failed to convert EventModel to entity on FetchEvent: %w", err)
 	}
-	return entity.Event{
-		ID:            eventId,
-		OwnerID:       oid,
-		Name:          eventM.Name,
-		Description:   eventM.Description,
-		DurationAbout: eventM.DurationAbout,
-		UnitSeconds:   int(eventM.UnitSeconds),
-		// Units:         etus,
-	}, nil
+	return e, nil
 }
 
 // FetchEventTimeUnits implements EventRepository.

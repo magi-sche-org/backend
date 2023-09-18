@@ -30,7 +30,7 @@ type oauthUsecase struct {
 }
 
 func NewOauthUsecase(cfg *config.Config, oar repository.OauthRepository, ur repository.UserRepository, uu UserUsecase) OauthUsecase {
-	_, err := oar.RegisterProvider(context.Background(), entity.OauthProvider{
+	p, err := oar.RegisterProvider(context.Background(), entity.OauthProvider{
 		Name:         "google",
 		ClientId:     cfg.OAuth.Google.ClientID,
 		ClientSecret: cfg.OAuth.Google.ClientSecret,
@@ -39,12 +39,13 @@ func NewOauthUsecase(cfg *config.Config, oar repository.OauthRepository, ur repo
 		panic(err)
 	}
 	gcfg := &oauth2.Config{
-		ClientID:     cfg.OAuth.Google.ClientID,
-		ClientSecret: cfg.OAuth.Google.ClientSecret,
+		ClientID:     p.ClientId,
+		ClientSecret: p.ClientSecret,
 		Endpoint:     google.Endpoint,
 		RedirectURL:  fmt.Sprintf("%s/oauth2/google/callback", cfg.BaseURL), // "http://localhost:8080/oauth2/google/callback",
 		Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
 	}
+	fmt.Printf("gcfguc: %+v\n", gcfg)
 	return &oauthUsecase{
 		cfg:       cfg,
 		googleCfg: gcfg,
@@ -60,21 +61,30 @@ func (oau *oauthUsecase) GetGoogleAuthURL(ctx context.Context) (url string, stat
 	if err != nil {
 		return "", "", err
 	}
-	url = oau.googleCfg.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	url = oau.googleCfg.AuthCodeURL(
+		state,
+		oauth2.AccessTypeOffline,
+		oauth2.ApprovalForce,
+	)
 	return url, state, nil
 }
 
 // LoginGoogleWithCode implements OauthUsecase.
 func (oau *oauthUsecase) LoginGoogleWithCode(ctx context.Context, code string) (*oauth2.Token, error) {
-	token, err := oau.googleCfg.Exchange(ctx, code, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	token, err := oau.googleCfg.Exchange(
+		ctx,
+		code,
+		oauth2.AccessTypeOffline,
+		oauth2.ApprovalForce,
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to login google with code(%s): %w", code, err)
 	}
 
 	return token, nil
 }
 
-// FetchAndRegisterOauthUserInfo implements OauthUsecase.
+// user infoがあれば，それに紐付いたユーザーを返す。なければ，新規ユーザーを作成して返す
 func (oau *oauthUsecase) FetchAndRegisterOauthUserInfo(ctx context.Context, token *oauth2.Token, targetUser *entity.User) (entity.User, error) {
 	client := oau.googleCfg.Client(ctx, token)
 	service, err := v2.NewService(ctx, option.WithHTTPClient(client))
@@ -101,6 +111,7 @@ func (oau *oauthUsecase) FetchAndRegisterOauthUserInfo(ctx context.Context, toke
 			// return entity.User{}, fmt.Errorf("already registered")
 		}
 	}
+	fmt.Printf("userInfo: %#v\n", userInfo)
 
 	user := entity.User{
 		Name:         userInfo.Email,

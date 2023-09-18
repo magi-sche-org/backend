@@ -12,8 +12,6 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/usecase"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 type OauthController interface {
@@ -28,27 +26,28 @@ type OauthController interface {
 }
 
 type oauthController struct {
-	cfg       *config.Config
-	googleCfg *oauth2.Config
-	oau       usecase.OauthUsecase
-	uu        usecase.UserUsecase
-	au        usecase.AuthUsecase
+	cfg *config.Config
+	// googleCfg *oauth2.Config
+	oau usecase.OauthUsecase
+	uu  usecase.UserUsecase
+	au  usecase.AuthUsecase
 }
 
 func NewOauthController(cfg *config.Config, oau usecase.OauthUsecase, uu usecase.UserUsecase, au usecase.AuthUsecase) OauthController {
-	gcfg := &oauth2.Config{
-		ClientID:     cfg.OAuth.Google.ClientID,
-		ClientSecret: cfg.OAuth.Google.ClientSecret,
-		Endpoint:     google.Endpoint,
-		RedirectURL:  fmt.Sprintf("%s/oauth2/google", cfg.BaseURL), // "http://localhost:8080/oauth2/google/callback",
-		Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
-	}
+	// gcfg := &oauth2.Config{
+	// 	ClientID:     cfg.OAuth.Google.ClientID,
+	// 	ClientSecret: cfg.OAuth.Google.ClientSecret,
+	// 	Endpoint:     google.Endpoint,
+	// 	RedirectURL:  fmt.Sprintf("%s/oauth2/google/callback", cfg.BaseURL), // "http://localhost:8080/oauth2/google/callback",
+	// 	Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
+	// }
+	// fmt.Printf("gcfgc: %+v\n", gcfg)
 	return &oauthController{
-		cfg:       cfg,
-		googleCfg: gcfg,
-		oau:       oau,
-		uu:        uu,
-		au:        au,
+		cfg: cfg,
+		// googleCfg: gcfg,
+		oau: oau,
+		uu:  uu,
+		au:  au,
 	}
 }
 
@@ -120,7 +119,7 @@ func (oc *oauthController) Callback(c echo.Context) error {
 	// get token
 	token, err := oc.oau.LoginGoogleWithCode(ctx, c.QueryParam("code"))
 	if err != nil {
-		return err
+		return fmt.Errorf("error on LoginGoogleWithCode: %w", err)
 	}
 
 	acuser, err := appcontext.Extract(ctx).GetUser()
@@ -133,7 +132,7 @@ func (oc *oauthController) Callback(c echo.Context) error {
 	log.Println(acuser, acuserp)
 	user, err := oc.oau.FetchAndRegisterOauthUserInfo(ctx, token, acuserp)
 	if err != nil {
-		return err
+		return fmt.Errorf("error on FetchAndRegisterOauthUserInfo: %w", err)
 	}
 	log.Println(acuser, acuserp, user)
 	sToken, err := oc.au.CreateToken(ctx, user)

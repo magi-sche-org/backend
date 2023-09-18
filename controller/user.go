@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/geekcamp-vol11-team30/backend/appcontext"
+	"github.com/geekcamp-vol11-team30/backend/apperror"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/labstack/echo/v4"
@@ -12,7 +13,7 @@ import (
 
 type UserController interface {
 	// Register(c echo.Context) error
-	GetEvents(c echo.Context) error
+	// GetEvents(c echo.Context) error
 	GetExternalCalendars(c echo.Context) error
 }
 
@@ -41,9 +42,9 @@ func NewUserController(uu usecase.UserUsecase) UserController {
 // }
 
 // GetEvents implements UserController.
-func (*userController) GetEvents(c echo.Context) error {
-	panic("unimplemented")
-}
+// func (*userController) GetEvents(c echo.Context) error {
+// 	panic("unimplemented")
+// }
 
 // GetExternalCalendars implements UserController.
 func (uc *userController) GetExternalCalendars(c echo.Context) error {
@@ -53,6 +54,11 @@ func (uc *userController) GetExternalCalendars(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return util.JSONResponse(c, http.StatusOK, user)
 
+	events, err := uc.uu.FetchExternalCalendars(ctx, user)
+	if err != nil {
+		return apperror.NewInternalError(err, "failed to fetch external calendars", "failed to fetch external calendars")
+	}
+
+	return util.JSONResponse(c, http.StatusOK, events)
 }

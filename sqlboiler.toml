@@ -1,4 +1,4 @@
-output = "db/models"
+output = "repository/internal/models"
 no-tests = true
 
 [mysql]

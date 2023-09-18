@@ -3,13 +3,16 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 
-	"github.com/geekcamp-vol11-team30/backend/db/models"
 	"github.com/geekcamp-vol11-team30/backend/entity"
+	"github.com/geekcamp-vol11-team30/backend/repository/internal/converter"
+	"github.com/geekcamp-vol11-team30/backend/repository/internal/models"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/oklog/ulid/v2"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type OauthRepository interface {
@@ -33,23 +36,18 @@ func NewOauthRepository(db *sql.DB) OauthRepository {
 
 // RegisterProvider implements OauthRepository.
 func (oar *oauthRepository) RegisterProvider(ctx context.Context, op entity.OauthProvider) (entity.OauthProvider, error) {
-	id := util.GenerateULIDNow()
-	opm := &models.OauthProvider{
-		ID:           util.ULIDToString(id),
-		Name:         op.Name,
-		ClientID:     op.ClientId,
-		ClientSecret: op.ClientSecret,
-	}
+	op.ID = util.GenerateULIDNow()
+	opm := converter.OauthProviderEntityToModel(ctx, op)
+
 	err := opm.Upsert(ctx, oar.db, boil.Infer(), boil.Infer())
 	if err != nil {
 		return entity.OauthProvider{}, err
 	}
-	return entity.OauthProvider{
-		ID:           id,
-		Name:         opm.Name,
-		ClientId:     opm.ClientID,
-		ClientSecret: opm.ClientSecret,
-	}, nil
+	newOp, err := converter.OauthProviderModelToEntity(ctx, opm)
+	if err != nil {
+		return entity.OauthProvider{}, fmt.Errorf("failed to convert OauthProviderModel to entity on RegisterProvider: %w", err)
+	}
+	return *newOp, nil
 }
 
 // FetchProviderByName implements OauthRepository.
@@ -72,60 +70,60 @@ func (or *oauthRepository) FetchProviderByName(ctx context.Context, name string)
 
 // RegisterOauthUserInfo implements OauthRepository.
 func (oar *oauthRepository) RegisterOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error) {
-	id := util.GenerateULID(ctx)
-	ouim := &models.OauthUserInfo{
-		ID:                    util.ULIDToString(id),
-		UserID:                util.ULIDToString(oui.UserId),
-		ProviderID:            util.ULIDToString(oui.ProviderId),
-		ProviderUID:           oui.ProviderUid,
-		AccessToken:           oui.AccessToken,
-		RefreshToken:          oui.RefreshToken,
-		AccessTokenExpiresAt:  oui.AccessTokenExpiresAt,
-		RefreshTokenExpiresAt: null.TimeFromPtr(oui.RefreshTokenExpiresAt),
-	}
+	oui.ID = util.GenerateULID(ctx)
+
+	ouim := converter.OauthUserInfoEntityToModel(ctx, oui)
+
 	err := ouim.Upsert(ctx, oar.db, boil.Infer(), boil.Infer())
 	if err != nil {
 		return entity.OauthUserInfo{}, err
 	}
-	userId, _ := util.ULIDFromString(ouim.UserID)
-	providerId, _ := util.ULIDFromString(ouim.ProviderID)
-	return entity.OauthUserInfo{
-		ID:                    id,
-		UserId:                userId,
-		ProviderId:            providerId,
-		ProviderUid:           ouim.ProviderUID,
-		AccessToken:           ouim.AccessToken,
-		RefreshToken:          ouim.RefreshToken,
-		AccessTokenExpiresAt:  ouim.AccessTokenExpiresAt,
-		RefreshTokenExpiresAt: ouim.RefreshTokenExpiresAt.Ptr(),
-	}, nil
+
+	newOui, err := converter.OauthUserInfoModelToEntity(ctx, ouim)
+	if err != nil {
+		return entity.OauthUserInfo{}, fmt.Errorf("failed to convert OauthUserInfoModel to entity on RegisterOauthUserInfo: %w", err)
+	}
+	return newOui, nil
 }
 
 // FetchOauthUserInfo implements OauthRepository.
 func (oar *oauthRepository) FetchOauthUserInfos(ctx context.Context, user entity.User) ([]entity.OauthUserInfo, error) {
 	ouism, err := models.OauthUserInfos(
 		models.OauthUserInfoWhere.UserID.EQ(util.ULIDToString(user.ID)),
+		qm.Load(
+			models.OauthUserInfoRels.Provider,
+		),
 	).All(ctx, oar.db)
 	if err != nil {
 		return nil, err
 	}
-	ouis := make([]entity.OauthUserInfo, len(ouism))
-	for i, oui := range ouism {
-		id, _ := util.ULIDFromString(oui.ID)
-		userId, _ := util.ULIDFromString(oui.UserID)
-		providerId, _ := util.ULIDFromString(oui.ProviderID)
-		ouis[i] = entity.OauthUserInfo{
-			ID:                    id,
-			UserId:                userId,
-			ProviderId:            providerId,
-			ProviderUid:           oui.ProviderUID,
-			AccessToken:           oui.AccessToken,
-			RefreshToken:          oui.RefreshToken,
-			AccessTokenExpiresAt:  oui.AccessTokenExpiresAt,
-			RefreshTokenExpiresAt: oui.RefreshTokenExpiresAt.Ptr(),
-		}
+	ouis, err := converter.OauthUserInfoSliceModelToEntity(ctx, ouism)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert OauthUserInfoModel to entity on FetchOauthUserInfos: %w", err)
 	}
 	return ouis, nil
+	// ouis := make([]entity.OauthUserInfo, len(ouism))
+	// for i, oui := range ouism {
+	// 	ouii, err := converter.OauthUserInfoModelToEntity(ctx, oui)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to convert OauthUserInfoModel to entity on FetchOauthUserInfos: %w", err)
+	// 	}
+	// 	ouis[i] = ouii
+	// 	// id, _ := util.ULIDFromString(oui.ID)
+	// 	// userId, _ := util.ULIDFromString(oui.UserID)
+	// 	// providerId, _ := util.ULIDFromString(oui.ProviderID)
+	// 	// ouis[i] = entity.OauthUserInfo{
+	// 	// 	ID:                    id,
+	// 	// 	UserId:                userId,
+	// 	// 	ProviderId:            providerId,
+	// 	// 	ProviderUid:           oui.ProviderUID,
+	// 	// 	AccessToken:           oui.AccessToken,
+	// 	// 	RefreshToken:          oui.RefreshToken,
+	// 	// 	AccessTokenExpiresAt:  oui.AccessTokenExpiresAt,
+	// 	// 	RefreshTokenExpiresAt: oui.RefreshTokenExpiresAt.Ptr(),
+	// 	// }
+	// }
+	// return ouis, nil
 }
 
 // FetchOauthUserInfo implements OauthRepository.
@@ -137,19 +135,12 @@ func (oar *oauthRepository) FetchOauthUserInfo(ctx context.Context, providerId u
 	if err != nil {
 		return entity.OauthUserInfo{}, err
 	}
-	id, _ := util.ULIDFromString(ouim.ID)
-	userId, _ := util.ULIDFromString(ouim.UserID)
-	// providerId, _ := util.ULIDFromString(ouim.ProviderID)
-	return entity.OauthUserInfo{
-		ID:                    id,
-		UserId:                userId,
-		ProviderId:            providerId,
-		ProviderUid:           ouim.ProviderUID,
-		AccessToken:           ouim.AccessToken,
-		RefreshToken:          ouim.RefreshToken,
-		AccessTokenExpiresAt:  ouim.AccessTokenExpiresAt,
-		RefreshTokenExpiresAt: ouim.RefreshTokenExpiresAt.Ptr(),
-	}, nil
+
+	oui, err := converter.OauthUserInfoModelToEntity(ctx, ouim)
+	if err != nil {
+		return entity.OauthUserInfo{}, fmt.Errorf("failed to convert OauthUserInfoModel to entity: %w", err)
+	}
+	return oui, nil
 }
 
 func (oar *oauthRepository) FetchUserInfoByUid(ctx context.Context, providerId ulid.ULID, uid string) (*entity.OauthUserInfo, error) {
@@ -158,18 +149,14 @@ func (oar *oauthRepository) FetchUserInfoByUid(ctx context.Context, providerId u
 		models.OauthUserInfoWhere.ProviderID.EQ(util.ULIDToString(providerId)),
 	).One(ctx, oar.db)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	id, _ := util.ULIDFromString(ouim.ID)
-	userId, _ := util.ULIDFromString(ouim.UserID)
-	return &entity.OauthUserInfo{
-		ID:                    id,
-		UserId:                userId,
-		ProviderId:            providerId,
-		ProviderUid:           ouim.ProviderUID,
-		AccessToken:           ouim.AccessToken,
-		RefreshToken:          ouim.RefreshToken,
-		AccessTokenExpiresAt:  ouim.AccessTokenExpiresAt,
-		RefreshTokenExpiresAt: ouim.RefreshTokenExpiresAt.Ptr(),
-	}, nil
+	oui, err := converter.OauthUserInfoModelToEntity(ctx, ouim)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert OauthUserInfoModel to entity on FetchUserInfoByUid: %w", err)
+	}
+	return &oui, nil
 }

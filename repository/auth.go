@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/geekcamp-vol11-team30/backend/db/models"
 	"github.com/geekcamp-vol11-team30/backend/entity"
+	"github.com/geekcamp-vol11-team30/backend/repository/internal/models"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )

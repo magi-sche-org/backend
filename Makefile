@@ -40,7 +40,7 @@ test: ## Execute tests
 	docker compose exec -it app go test -race -shuffle=on ./...  -coverprofile=coverage.out
 
 generate: ## Go generate
-	rm -rf ./db/models
+	rm -rf ./repository/internal/models
 	docker compose exec -it app go generate ./...
 
 migrate: ## Execute migration
