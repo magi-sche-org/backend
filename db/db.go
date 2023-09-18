@@ -24,7 +24,7 @@ func NewDB(cfg *config.Config, logger *zap.Logger) (*sql.DB, error) {
 	// dsn := config.FormatDSN()
 	db, err := sql.Open("mysql",
 		fmt.Sprintf(
-			"%s:%s@tcp(%s:%d)/%s?parseTime=true",
+			"%s:%s@tcp(%s:%d)/%s?parseTime=true&multiStatements=true",
 			// "%s:%s@%s:%d/%s?parseTime=true",
 			cfg.MySQL.User, cfg.MySQL.Password, cfg.MySQL.Host,
 			cfg.MySQL.Port, cfg.MySQL.DBName,

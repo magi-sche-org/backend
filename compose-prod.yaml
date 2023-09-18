@@ -1,16 +1,16 @@
 version: "3.9"
 volumes:
-  magische-db-data:
+  magische-db-data-prod:
 services:
   app:
     container_name: magische_app
     image: magische
     build:
       target: deploy
+      args:
+        - target=deploy
     env_file:
       - .env
-    # volumes:
-      # - .:/app
     ports:
       - ${APP_CLIENT_PORT:-80}:${PORT}
     healthcheck:
@@ -22,13 +22,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+  migrate:
+    container_name: magische_migrate
+    build:
+      target: migrate
+      args:
+        - target=migrate
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
   db:
     image: mysql:8.0
     container_name: magische-db
     env_file:
       - .env
     volumes:
-      - magische-db-data:/var/lib/mysql
+      - magische-db-data-prod:/var/lib/mysql
       - ./db/conf.d:/etc/mysql/conf.d:cached
     ports:
       - "${MYSQL_CLIENT_PORT:-3306}:3306"

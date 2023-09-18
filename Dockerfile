@@ -14,7 +14,7 @@ RUN go build -trimpath -ldflags="-s -w" -o migrate ./cmd/migrate
 RUN go build -trimpath -ldflags="-s -w" -o healthcheck ./cmd/healthcheck
 
 # for deploy
-FROM gcr.io/distroless/static-debian11:nonroot as deploy
+FROM gcr.io/distroless/base-debian12:latest as deploy
 
 WORKDIR /app
 COPY --from=deploy-builder /app/app ./
@@ -24,12 +24,12 @@ CMD ["/app/app"]
 
 
 # for migration
-FROM golang:1.21-bullseye as migrate
+FROM gcr.io/distroless/base-debian12:latest as migrate
 
 WORKDIR /app
-COPY --from=deploy-builder /app/migrate /app/migrate
-COPY --from=deploy-builder /app/db/migrations /app/db/migrations
-CMD ["./migrate"]
+COPY --from=deploy-builder /app/migrate ./
+COPY --from=deploy-builder /app/db/migrations/ ./db/migrations/
+CMD ["/app/migrate"]
 
 
 # for local development with air

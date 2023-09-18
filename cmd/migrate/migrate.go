@@ -27,7 +27,7 @@ func main() {
 		logger.Fatal("failed to set dialect", zap.Error(err))
 	}
 
-	err = goose.Up(db, "db/migrations")
+	err = goose.Up(db, "./db/migrations")
 	if err != nil {
 		logger.Fatal("failed to migrate", zap.Error(err))
 	}
