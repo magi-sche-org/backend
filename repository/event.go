@@ -94,25 +94,24 @@ func (er *eventRepository) CreateEventTimeUnits(ctx context.Context, tx *sql.Tx,
 	}
 
 	valueStrings := make([]string, 0, len(units))
-	valueArgs := make([]interface{}, 0, len(units)*4)
+	valueArgs := make([]interface{}, 0, len(units)*3)
 
 	for i, unit := range units {
 		unitId := util.GenerateULID(ctx)
 
-		valueStrings = append(valueStrings, "(?, ?, ?, ?)")
+		valueStrings = append(valueStrings, "(?, ?, ?)")
 		valueArgs = append(valueArgs, util.ULIDToString(unitId))
 		valueArgs = append(valueArgs, util.ULIDToString(unit.EventID))
 		valueArgs = append(valueArgs, unit.TimeSlot)
-		valueArgs = append(valueArgs, uint64(unit.SlotSeconds))
 		units[i].ID = unitId
 	}
 
-	query := fmt.Sprintf("INSERT INTO event_time_unit (id, event_id, time_slot, slot_seconds) VALUES %s", strings.Join(valueStrings, ","))
+	query := fmt.Sprintf("INSERT INTO event_time_unit (id, event_id, time_slot) VALUES %s", strings.Join(valueStrings, ","))
 	// log.Println(query, valueStrings, valueArgs)
 
 	_, err := exc.ExecContext(ctx, query, valueArgs...)
 	if err != nil {
-		return []entity.EventTimeUnit{}, err
+		return []entity.EventTimeUnit{}, fmt.Errorf("error on insert event time units: %w", err)
 	}
 	return units, nil
 }

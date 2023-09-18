@@ -5,6 +5,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/controller"
 	"github.com/geekcamp-vol11-team30/backend/logger"
 	"github.com/geekcamp-vol11-team30/backend/middleware"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
@@ -28,7 +29,7 @@ func NewRouter(
 	e.Use(atm.Handler)
 
 	e.GET("/health", func(c echo.Context) error {
-		return c.String(200, "OK")
+		return util.JSONResponse(c, 200, "OK")
 	})
 	e.GET("/csrf", ac.CreateCSRFToken)
 

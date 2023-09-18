@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -51,7 +52,7 @@ func (eu *eventUsecase) Create(ctx context.Context, reqEvent entity.Event, owner
 
 	newEvent, err := eu.er.CreateEvent(ctx, tx, reqEvent)
 	if err != nil {
-		return entity.Event{}, err
+		return entity.Event{}, fmt.Errorf("error on create event: %w", err)
 	}
 
 	units := reqEvent.Units
@@ -61,13 +62,13 @@ func (eu *eventUsecase) Create(ctx context.Context, reqEvent entity.Event, owner
 	}
 	units, err = eu.er.CreateEventTimeUnits(ctx, tx, units)
 	if err != nil {
-		return entity.Event{}, err
+		return entity.Event{}, fmt.Errorf("error on create event time units: %w", err)
 	}
 	newEvent.Units = units
 
 	err = tx.Commit()
 	if err != nil {
-		return entity.Event{}, err
+		return entity.Event{}, fmt.Errorf("error on commit on create event: %w", err)
 	}
 	return newEvent, nil
 }
