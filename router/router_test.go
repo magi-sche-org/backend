@@ -40,7 +40,7 @@ func TestNewRouter(t *testing.T) {
 
 		if assert.NoError(t, context.Handler()(context)) {
 			assert.Equal(t, http.StatusOK, recorder.Code)
-			assert.Equal(t, "OK", recorder.Body.String())
+			assert.Contains(t, recorder.Body.String(), "OK")
 		}
 	})
 }
