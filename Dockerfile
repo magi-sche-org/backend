@@ -16,8 +16,8 @@ RUN go build -trimpath -ldflags="-s -w" -o healthcheck ./cmd/healthcheck
 FROM gcr.io/distroless/base-debian11:latest as deploy
 
 WORKDIR /app
-COPY --from=deploy-builder /app/app /app/
-COPY --from=deploy-builder /app/healthcheck /app/
+COPY --from=deploy-builder /app/app /app/app
+COPY --from=deploy-builder /app/healthcheck /app/healthcheck
 
 CMD [ "./app" ]
 
@@ -26,8 +26,8 @@ CMD [ "./app" ]
 FROM golang:1.21-bullseye as migrate
 
 WORKDIR /app
-COPY --from=deploy-builder /app/migrate /app/
-COPY --from=deploy-builder /app/db/migrations /app/db/
+COPY --from=deploy-builder /app/migrate /app/migrate
+COPY --from=deploy-builder /app/db/migrations /app/db/migrations
 CMD ["./migrate"]
 
 
