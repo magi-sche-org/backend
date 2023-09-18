@@ -62,6 +62,20 @@ func (mr *MockAuthControllerMockRecorder) CreateUnregisteredUserAndToken(c inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUnregisteredUserAndToken", reflect.TypeOf((*MockAuthController)(nil).CreateUnregisteredUserAndToken), c)
 }
 
+// Logout mocks base method.
+func (m *MockAuthController) Logout(c echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Logout", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Logout indicates an expected call of Logout.
+func (mr *MockAuthControllerMockRecorder) Logout(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockAuthController)(nil).Logout), c)
+}
+
 // RefreshToken mocks base method.
 func (m *MockAuthController) RefreshToken(c echo.Context) error {
 	m.ctrl.T.Helper()

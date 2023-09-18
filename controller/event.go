@@ -3,6 +3,7 @@ package controller
 
 import (
 	"cmp"
+	"fmt"
 	"log"
 	"net/http"
 	"slices"
@@ -52,7 +53,7 @@ func (ec *eventController) Create(c echo.Context) error {
 		if ae, ok := err.(*apperror.AppError); ok {
 			return ae
 		} else {
-			return apperror.NewUnknownError(err, nil)
+			return apperror.NewUnknownError(fmt.Errorf("unknown error on create event controller: %w", err), nil)
 		}
 	}
 	res := eventToEventResponse(event, user)

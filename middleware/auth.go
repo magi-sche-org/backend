@@ -13,6 +13,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/apperror"
 	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -24,6 +25,7 @@ type AuthMiddleware interface {
 	CORSHandler(next echo.HandlerFunc) echo.HandlerFunc
 	CSRFHandler(next echo.HandlerFunc) echo.HandlerFunc
 	SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
+	IfLoginSessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 type authMiddleware struct {
@@ -132,7 +134,7 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 		if needCheckRefreshToken {
 			refreshCookie, err := c.Cookie("refreshToken")
 			if err != nil {
-				am.logger.Warn("user auth failed", zap.Error(errors.New("refresh token must be set")))
+				am.logger.Warn("user auth failed", zap.Error(fmt.Errorf("refresh token must be set: %w", err)))
 				return apperror.NewUnauthorizedError(errors.New("refresh token must be set"), nil, "4000-03")
 			}
 			refreshTokenString := refreshCookie.Value
@@ -140,6 +142,7 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 			if err != nil {
 				return err
 			}
+			util.SetTokenCookie(c, *am.cfg, token)
 			userId, err = am.verifyAccessToken(ctx, token.AccessToken)
 			if err != nil {
 				return err
@@ -161,6 +164,30 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 
 		err = next(c)
 		return err
+	}
+}
+
+// IfLoginSessionHandler implements AuthMiddleware.
+func (am *authMiddleware) IfLoginSessionHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	// atc, err := c.Cookie("accessToken")
+	return func(c echo.Context) error {
+		_, err := c.Cookie("accessToken")
+		if err != nil {
+			if !errors.Is(err, http.ErrNoCookie) {
+				// return next(c)
+				return err
+			}
+			// return err
+		}
+		_, err = c.Cookie("refreshToken")
+		if err != nil {
+			if errors.Is(err, http.ErrNoCookie) {
+				return next(c)
+				// return err
+			}
+			return err
+		}
+		return am.SessionHandler(next)(c)
 	}
 }
 

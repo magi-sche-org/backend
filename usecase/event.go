@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -51,7 +52,7 @@ func (eu *eventUsecase) Create(ctx context.Context, reqEvent entity.Event, owner
 
 	newEvent, err := eu.er.CreateEvent(ctx, tx, reqEvent)
 	if err != nil {
-		return entity.Event{}, err
+		return entity.Event{}, fmt.Errorf("error on create event: %w", err)
 	}
 
 	units := reqEvent.Units
@@ -61,13 +62,13 @@ func (eu *eventUsecase) Create(ctx context.Context, reqEvent entity.Event, owner
 	}
 	units, err = eu.er.CreateEventTimeUnits(ctx, tx, units)
 	if err != nil {
-		return entity.Event{}, err
+		return entity.Event{}, fmt.Errorf("error on create event time units: %w", err)
 	}
 	newEvent.Units = units
 
 	err = tx.Commit()
 	if err != nil {
-		return entity.Event{}, err
+		return entity.Event{}, fmt.Errorf("error on commit on create event: %w", err)
 	}
 	return newEvent, nil
 }
@@ -145,7 +146,7 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 		return entity.UserEventAnswer{}, err
 	}
 	ansUnits := reqAnswer.Units
-	for i, _ := range ansUnits {
+	for i := range ansUnits {
 		ansUnits[i].UserEventAnswerID = newAnswer.ID
 	}
 	// イベント参加回答時間単位登録
@@ -164,73 +165,73 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 	return newAnswer, nil
 }
 
-// RetrieveUserAnswer implements EventUsecase.
-func (eu *eventUsecase) RetrieveUserAnswer(ctx context.Context, eventId ulid.ULID, user entity.User) (entity.UserEventAnswer, error) {
-	// reqAnswer.EventID = eventId
-	// reqAnswer.UserID = user.ID
-	tx, err := boil.BeginTx(ctx, nil)
-	if err != nil {
-		return entity.UserEventAnswer{}, err
-	}
-	defer tx.Rollback()
+// // RetrieveUserAnswer implements EventUsecase.
+// func (eu *eventUsecase) RetrieveUserAnswer(ctx context.Context, eventId ulid.ULID, user entity.User) (entity.UserEventAnswer, error) {
+// 	// reqAnswer.EventID = eventId
+// 	// reqAnswer.UserID = user.ID
+// 	tx, err := boil.BeginTx(ctx, nil)
+// 	if err != nil {
+// 		return entity.UserEventAnswer{}, err
+// 	}
+// 	defer tx.Rollback()
 
-	uea, err := eu.er.FetchEventAnswer(ctx, tx, eventId, user.ID)
-	if err != nil {
-		return entity.UserEventAnswer{}, err
-	}
+// 	uea, err := eu.er.FetchEventAnswer(ctx, tx, eventId, user.ID)
+// 	if err != nil {
+// 		return entity.UserEventAnswer{}, err
+// 	}
 
-	// // イベントが存在するか確認・取得
-	// event, err := eu.er.FetchEvent(ctx, tx, eventId)
-	// if err != nil {
-	// 	if errors.Is(err, sql.ErrNoRows) {
-	// 		return entity.UserEventAnswer{}, apperror.NewNotFoundError(err, "event not found")
-	// 	}
-	// 	return entity.UserEventAnswer{}, err
-	// }
-	// // イベント時間単位取得
-	// units, err := eu.er.FetchEventTimeUnits(ctx, tx, eventId)
-	// if err != nil {
-	// 	return entity.UserEventAnswer{}, err
-	// }
-	// event.Units = units
+// 	// // イベントが存在するか確認・取得
+// 	// event, err := eu.er.FetchEvent(ctx, tx, eventId)
+// 	// if err != nil {
+// 	// 	if errors.Is(err, sql.ErrNoRows) {
+// 	// 		return entity.UserEventAnswer{}, apperror.NewNotFoundError(err, "event not found")
+// 	// 	}
+// 	// 	return entity.UserEventAnswer{}, err
+// 	// }
+// 	// // イベント時間単位取得
+// 	// units, err := eu.er.FetchEventTimeUnits(ctx, tx, eventId)
+// 	// if err != nil {
+// 	// 	return entity.UserEventAnswer{}, err
+// 	// }
+// 	// event.Units = units
 
-	// // eventのunitとanswerのunitが一致しているか確認(単純なvalidateができない)
-	// unitsMap := make(map[ulid.ULID]time.Time)
-	// for _, u := range event.Units {
-	// 	unitsMap[u.ID] = u.TimeSlot
-	// }
-	// for _, a := range reqAnswer.Units {
-	// 	if _, ok := unitsMap[a.EventTimeUnitID]; ok {
-	// 		delete(unitsMap, a.EventTimeUnitID)
-	// 	} else {
-	// 		return entity.UserEventAnswer{}, apperror.NewInvalidRequestBodyError(nil, "eventTimeUnitID is not valid")
-	// 	}
-	// }
-	// if len(unitsMap) != 0 {
-	// 	return entity.UserEventAnswer{}, apperror.NewInvalidRequestBodyError(nil, "eventTimeUnitID is not valid")
-	// }
+// 	// // eventのunitとanswerのunitが一致しているか確認(単純なvalidateができない)
+// 	// unitsMap := make(map[ulid.ULID]time.Time)
+// 	// for _, u := range event.Units {
+// 	// 	unitsMap[u.ID] = u.TimeSlot
+// 	// }
+// 	// for _, a := range reqAnswer.Units {
+// 	// 	if _, ok := unitsMap[a.EventTimeUnitID]; ok {
+// 	// 		delete(unitsMap, a.EventTimeUnitID)
+// 	// 	} else {
+// 	// 		return entity.UserEventAnswer{}, apperror.NewInvalidRequestBodyError(nil, "eventTimeUnitID is not valid")
+// 	// 	}
+// 	// }
+// 	// if len(unitsMap) != 0 {
+// 	// 	return entity.UserEventAnswer{}, apperror.NewInvalidRequestBodyError(nil, "eventTimeUnitID is not valid")
+// 	// }
 
-	// // イベント参加回答登録
-	// newAnswer, err := eu.er.UpdateEventAnswer(ctx, tx, reqAnswer)
-	// if err != nil {
-	// 	return entity.UserEventAnswer{}, err
-	// }
-	// ansUnits := reqAnswer.Units
-	// for i, _ := range ansUnits {
-	// 	ansUnits[i].UserEventAnswerID = newAnswer.ID
-	// }
-	// // イベント参加回答時間単位登録
-	// ansUnits, err = eu.er.RegisterAnswerUnits(ctx, tx, ansUnits)
-	// if err != nil {
-	// 	return entity.UserEventAnswer{}, err
-	// }
-	// newAnswer.Units = ansUnits
+// 	// // イベント参加回答登録
+// 	// newAnswer, err := eu.er.UpdateEventAnswer(ctx, tx, reqAnswer)
+// 	// if err != nil {
+// 	// 	return entity.UserEventAnswer{}, err
+// 	// }
+// 	// ansUnits := reqAnswer.Units
+// 	// for i, _ := range ansUnits {
+// 	// 	ansUnits[i].UserEventAnswerID = newAnswer.ID
+// 	// }
+// 	// // イベント参加回答時間単位登録
+// 	// ansUnits, err = eu.er.RegisterAnswerUnits(ctx, tx, ansUnits)
+// 	// if err != nil {
+// 	// 	return entity.UserEventAnswer{}, err
+// 	// }
+// 	// newAnswer.Units = ansUnits
 
-	// commit!
-	err = tx.Commit()
-	if err != nil {
-		return entity.UserEventAnswer{}, err
-	}
+// 	// commit!
+// 	err = tx.Commit()
+// 	if err != nil {
+// 		return entity.UserEventAnswer{}, err
+// 	}
 
-	return uea, nil
-}
+// 	return uea, nil
+// }

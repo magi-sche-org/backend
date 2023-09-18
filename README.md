@@ -32,7 +32,15 @@ make migrate
 
 を行うと，gooseによるmigrateのup処理が走ります。
 
-downやcreateを行いたい場合は，お手数ながら
+down処理は，
+
+```shell
+make migrate-down
+```
+
+で走ります。
+
+createなどを行いたい場合は，お手数ながら
 
 ```shell
 make exec
@@ -41,7 +49,6 @@ make exec
 を行って
 
 ```shell
-goose -dir ./db/migrations mysql "mysql:mysql@/magische?parseTime=true" down
 goose -dir ./db/migrations mysql "mysql:mysql@/magische?parseTime=true" status
 goose -dir ./db/migrations mysql "mysql:mysql@/magische?parseTime=true" create <migration_name> sql
 ```
@@ -55,6 +62,8 @@ make generate
 ```
 
 を行うと，db/modelsの掃除後，sqlboilerによるgenerateが走ります。
+
+また，gomockによるmockのgenerateも走ります。
 
 ## 構成
 

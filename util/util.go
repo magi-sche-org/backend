@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/appcontext"
 	"github.com/geekcamp-vol11-team30/backend/config"
@@ -16,6 +17,10 @@ import (
 func GenerateULID(ctx context.Context) ulid.ULID {
 	actx := appcontext.Extract(ctx)
 	id, _ := ulid.New(ulid.Timestamp(actx.Now), rand.Reader)
+	return id
+}
+func GenerateULIDNow() ulid.ULID {
+	id, _ := ulid.New(ulid.Timestamp(time.Now()), rand.Reader)
 	return id
 }
 
@@ -43,30 +48,70 @@ func SetTokenCookie(c echo.Context, cfg config.Config, token entity.Token) {
 	c.SetCookie(&http.Cookie{
 		Name:  "accessToken",
 		Value: token.AccessToken,
-		// Path:       "",
+		Path:  "/",
 		// Domain:     "",
 		Expires: token.AccessTokenExpiredAt,
 		// RawExpires: "",
 		// MaxAge:     0,
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		// Raw:        "",
 		// Unparsed:   []string{},
 	})
 	c.SetCookie(&http.Cookie{
 		Name:  "refreshToken",
 		Value: token.RefreshToken,
-		// Path:       "",
+		Path:  "/",
 		// Domain:     "",
 		Expires: token.RefreshTokenExpiredAt,
 		// RawExpires: "",
 		// MaxAge:     0,
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		// Raw:        "",
 		// Unparsed:   []string{},
 	})
 
+}
+func DeleteTokenCookie(c echo.Context, cfg config.Config) {
+	c.SetCookie(&http.Cookie{
+		Name:  "accessToken",
+		Value: "",
+		Path:  "/",
+		// Expires:  time.Now(),
+		Secure:   cfg.Env != "dev",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+	c.SetCookie(&http.Cookie{
+		Name:  "refreshToken",
+		Value: "",
+		Path:  "/",
+		// Expires:  time.Now(),
+		Secure:   cfg.Env != "dev",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+}
+
+func MakeRandomStr(digit int) (string, error) {
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	// 乱数を生成
+	b := make([]byte, digit)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+
+	// letters からランダムに取り出して文字列を生成
+	var result string
+	for _, v := range b {
+		// index が letters の長さに収まるように調整
+		result += string(letters[int(v)%len(letters)])
+	}
+	return result, nil
 }

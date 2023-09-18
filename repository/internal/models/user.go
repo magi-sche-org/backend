@@ -80,10 +80,12 @@ var UserWhere = struct {
 // UserRels is where relationship names are stored.
 var UserRels = struct {
 	OwnerEvents      string
+	OauthUserInfos   string
 	RefreshTokens    string
 	UserEventAnswers string
 }{
 	OwnerEvents:      "OwnerEvents",
+	OauthUserInfos:   "OauthUserInfos",
 	RefreshTokens:    "RefreshTokens",
 	UserEventAnswers: "UserEventAnswers",
 }
@@ -91,6 +93,7 @@ var UserRels = struct {
 // userR is where relationships are stored.
 type userR struct {
 	OwnerEvents      EventSlice           `boil:"OwnerEvents" json:"OwnerEvents" toml:"OwnerEvents" yaml:"OwnerEvents"`
+	OauthUserInfos   OauthUserInfoSlice   `boil:"OauthUserInfos" json:"OauthUserInfos" toml:"OauthUserInfos" yaml:"OauthUserInfos"`
 	RefreshTokens    RefreshTokenSlice    `boil:"RefreshTokens" json:"RefreshTokens" toml:"RefreshTokens" yaml:"RefreshTokens"`
 	UserEventAnswers UserEventAnswerSlice `boil:"UserEventAnswers" json:"UserEventAnswers" toml:"UserEventAnswers" yaml:"UserEventAnswers"`
 }
@@ -105,6 +108,13 @@ func (r *userR) GetOwnerEvents() EventSlice {
 		return nil
 	}
 	return r.OwnerEvents
+}
+
+func (r *userR) GetOauthUserInfos() OauthUserInfoSlice {
+	if r == nil {
+		return nil
+	}
+	return r.OauthUserInfos
 }
 
 func (r *userR) GetRefreshTokens() RefreshTokenSlice {
@@ -424,6 +434,20 @@ func (o *User) OwnerEvents(mods ...qm.QueryMod) eventQuery {
 	return Events(queryMods...)
 }
 
+// OauthUserInfos retrieves all the oauth_user_info's OauthUserInfos with an executor.
+func (o *User) OauthUserInfos(mods ...qm.QueryMod) oauthUserInfoQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("`oauth_user_info`.`user_id`=?", o.ID),
+	)
+
+	return OauthUserInfos(queryMods...)
+}
+
 // RefreshTokens retrieves all the refresh_token's RefreshTokens with an executor.
 func (o *User) RefreshTokens(mods ...qm.QueryMod) refreshTokenQuery {
 	var queryMods []qm.QueryMod
@@ -558,6 +582,120 @@ func (userL) LoadOwnerEvents(ctx context.Context, e boil.ContextExecutor, singul
 					foreign.R = &eventR{}
 				}
 				foreign.R.Owner = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadOauthUserInfos allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadOauthUserInfos(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
+
+	if singular {
+		var ok bool
+		object, ok = maybeUser.(*User)
+		if !ok {
+			object = new(User)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeUser)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeUser))
+			}
+		}
+	} else {
+		s, ok := maybeUser.(*[]*User)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeUser)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeUser))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`oauth_user_info`),
+		qm.WhereIn(`oauth_user_info.user_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load oauth_user_info")
+	}
+
+	var resultSlice []*OauthUserInfo
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice oauth_user_info")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on oauth_user_info")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for oauth_user_info")
+	}
+
+	if len(oauthUserInfoAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.OauthUserInfos = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &oauthUserInfoR{}
+			}
+			foreign.R.User = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.UserID {
+				local.R.OauthUserInfos = append(local.R.OauthUserInfos, foreign)
+				if foreign.R == nil {
+					foreign.R = &oauthUserInfoR{}
+				}
+				foreign.R.User = local
 				break
 			}
 		}
@@ -842,6 +980,59 @@ func (o *User) AddOwnerEvents(ctx context.Context, exec boil.ContextExecutor, in
 			}
 		} else {
 			rel.R.Owner = o
+		}
+	}
+	return nil
+}
+
+// AddOauthUserInfos adds the given related objects to the existing relationships
+// of the user, optionally inserting them as new records.
+// Appends related to o.R.OauthUserInfos.
+// Sets related.R.User appropriately.
+func (o *User) AddOauthUserInfos(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*OauthUserInfo) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.UserID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE `oauth_user_info` SET %s WHERE %s",
+				strmangle.SetParamNames("`", "`", 0, []string{"user_id"}),
+				strmangle.WhereClause("`", "`", 0, oauthUserInfoPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.UserID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			OauthUserInfos: related,
+		}
+	} else {
+		o.R.OauthUserInfos = append(o.R.OauthUserInfos, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &oauthUserInfoR{
+				User: o,
+			}
+		} else {
+			rel.R.User = o
 		}
 	}
 	return nil

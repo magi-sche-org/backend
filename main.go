@@ -11,6 +11,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/middleware"
 	"github.com/geekcamp-vol11-team30/backend/repository"
 	"github.com/geekcamp-vol11-team30/backend/router"
+	"github.com/geekcamp-vol11-team30/backend/service"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
 	"github.com/geekcamp-vol11-team30/backend/validator"
 	_ "github.com/go-sql-driver/mysql"
@@ -45,10 +46,13 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	ur := repository.NewUserRepository(db)
 	ar := repository.NewAuthRepository(db)
 	er := repository.NewEventRepository(db)
+	oar := repository.NewOauthRepository(db)
+	gs := service.NewGoogleService(cfg, oar)
 	uv := validator.NewUserValidator()
-	uu := usecase.NewUserUsecase(ur, uv)
+	uu := usecase.NewUserUsecase(ur, oar, uv, gs)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
 	eu := usecase.NewEventUsecase(er)
+	oau := usecase.NewOauthUsecase(cfg, oar, ur, uu)
 
 	em := middleware.NewErrorMiddleware(logger, uu)
 	atm := middleware.NewAccessTimeMiddleware()
@@ -57,13 +61,14 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	uc := controller.NewUserController(uu)
 	ac := controller.NewAuthController(cfg, uu, au)
 	ec := controller.NewEventController(eu)
+	oc := controller.NewOauthController(cfg, oau, uu, au)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
 		logger.Fatal("failed to listen port", zap.Error(err))
 	}
 
-	e := router.NewRouter(cfg, logger, em, atm, am, uc, ac, ec)
+	e := router.NewRouter(cfg, logger, em, atm, am, uc, ac, ec, oc)
 	s := NewServer(e, l, logger)
 	return s.Run(ctx)
 }
