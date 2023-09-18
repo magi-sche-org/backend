@@ -14,7 +14,7 @@ services:
     ports:
       - ${APP_CLIENT_PORT:-80}:${PORT}
     healthcheck:
-      test: ["CMD", "./healthcheck"]
+      test: ["CMD", "/app/healthcheck"]
       interval: 5s
       timeout: 10s
       retries: 10
