@@ -77,22 +77,24 @@ func SetTokenCookie(c echo.Context, cfg config.Config, token entity.Token) {
 }
 func DeleteTokenCookie(c echo.Context, cfg config.Config) {
 	c.SetCookie(&http.Cookie{
-		Name:     "accessToken",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Now(),
+		Name:  "accessToken",
+		Value: "",
+		Path:  "/",
+		// Expires:  time.Now(),
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
 	})
 	c.SetCookie(&http.Cookie{
-		Name:     "refreshToken",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Now(),
+		Name:  "refreshToken",
+		Value: "",
+		Path:  "/",
+		// Expires:  time.Now(),
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
 	})
 }
 
