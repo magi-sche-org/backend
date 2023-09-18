@@ -6,6 +6,7 @@ WORKDIR /app
 COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
+ENV CGO_ENABLED=0
 
 COPY . ./
 RUN go build -trimpath -ldflags="-s -w" -o app
@@ -13,13 +14,13 @@ RUN go build -trimpath -ldflags="-s -w" -o migrate ./cmd/migrate
 RUN go build -trimpath -ldflags="-s -w" -o healthcheck ./cmd/healthcheck
 
 # for deploy
-FROM gcr.io/distroless/base-debian11:latest as deploy
+FROM gcr.io/distroless/static-debian11:nonroot as deploy
 
 WORKDIR /app
-COPY --from=deploy-builder /app/app /app/app
-COPY --from=deploy-builder /app/healthcheck /app/healthcheck
+COPY --from=deploy-builder /app/app ./
+COPY --from=deploy-builder /app/healthcheck ./
 
-CMD [ "/app/app" ]
+CMD ["/app/app"]
 
 
 # for migration
