@@ -108,7 +108,7 @@ func (uu *userUsecase) FetchExternalCalendars(ctx context.Context, user entity.U
 			if err != nil {
 				return [][]entity.CalendarEvent{}, fmt.Errorf("failed to get events: %w", err)
 			}
-			fmt.Printf("events: %+v\n", events)
+			// fmt.Printf("events: %+v\n", events)
 			eventsAll = append(eventsAll, events)
 		}
 	}

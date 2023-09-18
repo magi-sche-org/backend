@@ -25,10 +25,13 @@ func OauthUserInfoModelToEntity(ctx context.Context, ouim *models.OauthUserInfo)
 	}
 
 	var provider *entity.OauthProvider
-	if p := ouim.R.Provider; p != nil {
-		provider, err = OauthProviderModelToEntity(ctx, p)
-		if err != nil {
-			return entity.OauthUserInfo{}, fmt.Errorf("failed to convert OauthProviderModel to entity on OauthUserInfoModelToEntity: %w", err)
+	provider = nil
+	if pr := ouim.R; pr != nil {
+		if p := pr.Provider; p != nil {
+			provider, err = OauthProviderModelToEntity(ctx, p)
+			if err != nil {
+				return entity.OauthUserInfo{}, fmt.Errorf("failed to convert OauthProviderModel to entity on OauthUserInfoModelToEntity: %w", err)
+			}
 		}
 	}
 

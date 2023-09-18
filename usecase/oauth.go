@@ -30,20 +30,25 @@ type oauthUsecase struct {
 }
 
 func NewOauthUsecase(cfg *config.Config, oar repository.OauthRepository, ur repository.UserRepository, uu UserUsecase) OauthUsecase {
-	p, err := oar.RegisterProvider(context.Background(), entity.OauthProvider{
-		Name:         "google",
-		ClientId:     cfg.OAuth.Google.ClientID,
-		ClientSecret: cfg.OAuth.Google.ClientSecret,
-	})
-	if err != nil {
-		panic(err)
-	}
+	// p, err := oar.RegisterProvider(context.Background(), entity.OauthProvider{
+	// 	Name:         "google",
+	// 	ClientId:     cfg.OAuth.Google.ClientID,
+	// 	ClientSecret: cfg.OAuth.Google.ClientSecret,
+	// })
+	// if err != nil {
+	// 	panic(err)
+	// }
 	gcfg := &oauth2.Config{
-		ClientID:     p.ClientId,
-		ClientSecret: p.ClientSecret,
+		ClientID:     cfg.OAuth.Google.ClientID,
+		ClientSecret: cfg.OAuth.Google.ClientSecret,
 		Endpoint:     google.Endpoint,
 		RedirectURL:  fmt.Sprintf("%s/oauth2/google/callback", cfg.BaseURL), // "http://localhost:8080/oauth2/google/callback",
-		Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
+		Scopes: []string{
+			"openid",
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+			"https://www.googleapis.com/auth/calendar.readonly",
+		},
 	}
 	fmt.Printf("gcfguc: %+v\n", gcfg)
 	return &oauthUsecase{
@@ -91,9 +96,13 @@ func (oau *oauthUsecase) FetchAndRegisterOauthUserInfo(ctx context.Context, toke
 	if err != nil {
 		return entity.User{}, err
 	}
-	userInfo, err := service.Tokeninfo().AccessToken(token.AccessToken).Context(ctx).Do()
+	tokenInfo, err := service.Tokeninfo().AccessToken(token.AccessToken).Context(ctx).Do()
 	if err != nil {
 		return entity.User{}, err
+	}
+	userInfo, err := service.Userinfo.Get().Do()
+	if err != nil {
+		return entity.User{}, fmt.Errorf("failed to get userinfo: %w", err)
 	}
 
 	{
@@ -101,20 +110,23 @@ func (oau *oauthUsecase) FetchAndRegisterOauthUserInfo(ctx context.Context, toke
 		if err != nil {
 			return entity.User{}, err
 		}
-		oaui, err := oau.oar.FetchUserInfoByUid(ctx, op.ID, userInfo.UserId)
+		oaui, err := oau.oar.FetchUserInfoByUid(ctx, op.ID, tokenInfo.UserId)
 		if err != nil {
 			return entity.User{}, err
 		}
 		if oaui != nil {
 			user, err := oau.ur.Find(ctx, oaui.UserId)
+			if err != nil {
+				return entity.User{}, fmt.Errorf("failed to find user: %w", err)
+			}
 			return user, err
 			// return entity.User{}, fmt.Errorf("already registered")
 		}
 	}
-	fmt.Printf("userInfo: %#v\n", userInfo)
+	fmt.Printf("userInfo: %#v\n", tokenInfo)
 
 	user := entity.User{
-		Name:         userInfo.Email,
+		Name:         userInfo.Name,
 		IsRegistered: true,
 	}
 	if targetUser == nil {
@@ -140,7 +152,7 @@ func (oau *oauthUsecase) FetchAndRegisterOauthUserInfo(ctx context.Context, toke
 	oaui := entity.OauthUserInfo{
 		UserId:                user.ID,
 		ProviderId:            provider.ID,
-		ProviderUid:           userInfo.UserId,
+		ProviderUid:           tokenInfo.UserId,
 		AccessToken:           token.AccessToken,
 		RefreshToken:          token.RefreshToken,
 		AccessTokenExpiresAt:  token.Expiry,

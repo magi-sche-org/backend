@@ -19,6 +19,9 @@ WORKDIR /app
 COPY --from=deploy-builder /app/app /app
 COPY --from=deploy-builder /app/healthcheck /app
 
+CMD [ "./app" ]
+
+
 # for migration
 FROM golang:1.21-bullseye as migrate
 

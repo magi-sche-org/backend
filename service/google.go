@@ -39,8 +39,14 @@ func NewGoogleService(cfg *config.Config, oar repository.OauthRepository) Google
 		ClientSecret: p.ClientSecret,
 		Endpoint:     google.Endpoint,
 		RedirectURL:  fmt.Sprintf("%s/oauth2/google/callback", cfg.BaseURL), // "http://localhost:8080/oauth2/google/callback",
-		Scopes:       []string{"openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/calendar.readonly"},
+		Scopes: []string{
+			"openid",
+			"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile",
+			"https://www.googleapis.com/auth/calendar.readonly",
+		},
 	}
+	fmt.Printf("gcfguc: %+v\n", gcfg)
 	return &googleService{
 		googleCfg: gcfg,
 	}
@@ -58,6 +64,8 @@ func (gs googleService) GetEvents(ctx context.Context, oui entity.OauthUserInfo)
 	// 		Expiry:       accessTokenExpires,
 	// 	}
 	// }
+
+	// TODO: refresh時にはDBのtokenを更新する
 	token := converter.OauthUserInfoEntityToOauth2Token(oui)
 	tokenSource := gs.googleCfg.TokenSource(ctx, token)
 	service, err := v2.NewService(ctx, option.WithTokenSource(tokenSource))
@@ -92,12 +100,13 @@ func (gs googleService) GetEvents(ctx context.Context, oui entity.OauthUserInfo)
 	if err != nil {
 		return []entity.CalendarEvent{}, fmt.Errorf("failed to get events: %w", err)
 	}
-	fmt.Printf("events: %+v\n", events)
+	// fmt.Printf("events: %+v\n", events)
 	eventsEntity, err := converter.CalendarEventsToEntity(events)
 	if err != nil {
 		return []entity.CalendarEvent{}, fmt.Errorf("failed to convert events to entity: %w", err)
 	}
-	fmt.Printf("eventsEntity: %+v\n", eventsEntity)
+	// fmt.Printf("eventsEntity: %+v\n", eventsEntity)
+	fmt.Printf("name: %s", userinfo.Name)
 	return eventsEntity, nil
 
 	// client := gs.googleCfg.Client(ctx, token)

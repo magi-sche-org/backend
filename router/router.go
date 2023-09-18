@@ -38,6 +38,7 @@ func NewRouter(
 	// ログイン中ユーザー関連
 	eug := e.Group("/user")
 	eug.Use(am.SessionHandler)
+	eug.GET("", uc.Get)
 	// eug.GET("/events", uc.GetEvents)
 	eug.GET("/external_events", uc.GetExternalCalendars)
 

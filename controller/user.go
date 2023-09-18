@@ -14,6 +14,7 @@ import (
 type UserController interface {
 	// Register(c echo.Context) error
 	// GetEvents(c echo.Context) error
+	Get(c echo.Context) error
 	GetExternalCalendars(c echo.Context) error
 }
 
@@ -25,6 +26,15 @@ func NewUserController(uu usecase.UserUsecase) UserController {
 	return &userController{
 		uu: uu,
 	}
+}
+
+func (uc *userController) Get(c echo.Context) error {
+	ctx := c.Request().Context()
+	user, err := appcontext.Extract(ctx).GetUser()
+	if err != nil {
+		return err
+	}
+	return util.JSONResponse(c, http.StatusOK, user)
 }
 
 // // Register implements UserController.
