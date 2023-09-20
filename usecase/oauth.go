@@ -39,7 +39,7 @@ func NewOauthUsecase(cfg *config.Config, oar repository.OauthRepository, ur repo
 			"https://www.googleapis.com/auth/calendar.readonly",
 		},
 	}
-	fmt.Printf("gcfguc: %+v\n", gcfg)
+	// fmt.Printf("gcfguc: %+v\n", gcfg)
 	return &oauthUsecase{
 		cfg:       cfg,
 		googleCfg: gcfg,

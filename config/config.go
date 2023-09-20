@@ -1,23 +1,24 @@
 package config
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/caarlos0/env/v9"
 )
 
 type Config struct {
-	Port                 int    `env:"PORT" envDefault:"80"`
-	Env                  string `env:"ENV" envDefault:"dev"`
-	BaseURL              string `env:"BASE_URL" envDefault:"http://localhost:8080"`
-	SecretKey            string `env:"SECRET_KEY" envDefault:"secret"`
-	AccessExpireMinutes  int    `env:"ACCESS_TOKEN_EXPIRE_MINUTES" envDefault:"5"`
-	RefreshExpireMinutes int    `env:"REFRESH_TOKEN_EXPIRE_MINUTES" envDefault:"43200"`
-	MySQL                MySQL  `envPrefix:"MYSQL_"`
-	OAuth                OAuth  `envPrefix:"OAUTH_"`
-	CORS                 CORS   `envPrefix:"CORS_"`
-	CSRF                 CSRF   `envPrefix:"CSRF_"`
+	Port                 int      `env:"PORT" envDefault:"80"`
+	Env                  string   `env:"ENV" envDefault:"dev"`
+	BaseURL              string   `env:"BASE_URL" envDefault:"http://localhost:8080"`
+	SecretKey            string   `env:"SECRET_KEY" envDefault:"secret"`
+	AccessExpireMinutes  int      `env:"ACCESS_TOKEN_EXPIRE_MINUTES" envDefault:"5"`
+	RefreshExpireMinutes int      `env:"REFRESH_TOKEN_EXPIRE_MINUTES" envDefault:"43200"`
+	TokenSameSite        SameSite `env:"TOKEN_SAME_SITE" envDefault:"Lax"`
+
+	MySQL MySQL `envPrefix:"MYSQL_"`
+	OAuth OAuth `envPrefix:"OAUTH_"`
+	CORS  CORS  `envPrefix:"CORS_"`
+	CSRF  CSRF  `envPrefix:"CSRF_"`
 }
 
 type MySQL struct {
@@ -76,7 +77,7 @@ func New() (*Config, error) {
 	if err := env.Parse(config); err != nil {
 		return nil, err
 	}
-	log.Printf("config: %+v", config)
+	// log.Printf("config: %+v", config)
 
 	return config, nil
 }

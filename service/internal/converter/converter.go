@@ -67,7 +67,7 @@ func parseGoogleAllDayEventToEntity(event *calendar.Event) (entity.CalendarEvent
 func parseGoogleNormalEventToEntity(event *calendar.Event) (entity.CalendarEvent, error) {
 	url := event.HtmlLink
 	displayOnly := event.Transparency == "transparent"
-	fmt.Printf("event.Transparency: %+v\n", event.Transparency)
+
 	start, err := time.Parse(time.RFC3339, event.Start.DateTime)
 	if err != nil {
 		return entity.CalendarEvent{}, fmt.Errorf("failed to parse time: %w", err)

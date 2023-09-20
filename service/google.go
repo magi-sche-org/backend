@@ -56,7 +56,7 @@ func NewGoogleService(cfg *config.Config, oar repository.OauthRepository, ur rep
 			"https://www.googleapis.com/auth/calendar.readonly",
 		},
 	}
-	fmt.Printf("gcfguc: %+v\n", gcfg)
+	// fmt.Printf("gcfguc: %+v\n", gcfg)
 	return &googleService{
 		googleCfg: gcfg,
 		oar:       oar,
@@ -315,7 +315,7 @@ func (gs googleService) fetchEventsByCalendarID(ctx context.Context, service *ca
 	nextPageToken := ""
 	items := []*calendar.Event{}
 	for {
-		fmt.Printf("nextPageToken: %+v\n", nextPageToken)
+		// fmt.Printf("nextPageToken: %+v\n", nextPageToken)
 		events, err := service.Events.List(id).
 			EventTypes("default", "focusTime", "outOfOffice").
 			SingleEvents(true).
