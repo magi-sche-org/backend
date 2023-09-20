@@ -6,6 +6,7 @@ services:
     container_name: magische_app
     image: magische
     build:
+      target: dev
       args:
         - target=dev
     env_file:
