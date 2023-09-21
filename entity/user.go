@@ -13,12 +13,6 @@ type User struct {
 	IsRegistered bool      `json:"isRegistered"`
 }
 
-type UserResponse struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	IsRegistered bool   `json:"isRegistered"`
-}
-
 type Calendar struct {
 	Events       CalendarEvents `json:"events"`
 	Provider     string         `json:"provider"`

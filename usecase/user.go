@@ -15,6 +15,8 @@ import (
 type UserUsecase interface {
 	CreateAnonymousUser(ctx context.Context) (entity.User, error)
 	FindUserByID(ctx context.Context, id ulid.ULID) (entity.User, error)
+
+	RetrieveUserProviders(ctx context.Context, user entity.User) ([]entity.OauthProvider, []entity.OauthUserInfo, error)
 	// Register(ctx context.Context, user entity.User) ([]entity.CalendarEvent, error)
 	FetchExternalCalendars(ctx context.Context, user entity.User, timeMin *time.Time, timeMax *time.Time) ([]entity.Calendar, error)
 }
@@ -56,6 +58,20 @@ func (uu *userUsecase) FindUserByID(ctx context.Context, id ulid.ULID) (entity.U
 		return entity.User{}, err
 	}
 	return user, nil
+}
+
+// RetrieveUserProviders implements UserUsecase.
+func (uu *userUsecase) RetrieveUserProviders(ctx context.Context, user entity.User) ([]entity.OauthProvider, []entity.OauthUserInfo, error) {
+	ouis, err := uu.oar.FetchOauthUserInfos(ctx, user)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch oauth user infos: %w", err)
+	}
+	ops, err := uu.oar.FetchProviders(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch providers: %w", err)
+	}
+	return ops, ouis, nil
+
 }
 
 // // Register implements UserUsecase.

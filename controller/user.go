@@ -36,7 +36,16 @@ func (uc *userController) Get(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return util.JSONResponse(c, http.StatusOK, user)
+
+	ops, ouis, err := uc.uu.RetrieveUserProviders(ctx, user)
+	if err != nil {
+		return apperror.NewInternalError(err, "failed to retrieve user providers", "failed to retrieve user providers")
+	}
+	ur := types.UserResponse{
+		User:      user,
+		Providers: types.NewProviderResponse(ops, ouis),
+	}
+	return util.JSONResponse(c, http.StatusOK, ur)
 }
 
 // // Register implements UserController.
