@@ -14,6 +14,7 @@ type Config struct {
 	AccessExpireMinutes  int      `env:"ACCESS_TOKEN_EXPIRE_MINUTES" envDefault:"5"`
 	RefreshExpireMinutes int      `env:"REFRESH_TOKEN_EXPIRE_MINUTES" envDefault:"43200"`
 	TokenSameSite        SameSite `env:"TOKEN_SAME_SITE" envDefault:"Lax"`
+	SqlLog               bool     `env:"SQL_LOG" envDefault:"false"`
 
 	MySQL MySQL `envPrefix:"MYSQL_"`
 	OAuth OAuth `envPrefix:"OAUTH_"`

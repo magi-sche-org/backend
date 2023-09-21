@@ -41,7 +41,7 @@ func run(ctx context.Context, logger *zap.Logger) error {
 		return err
 	}
 	boil.SetDB(db)
-	boil.DebugMode = cfg.Env == "dev"
+	boil.DebugMode = cfg.SqlLog
 
 	ur := repository.NewUserRepository(db)
 	ar := repository.NewAuthRepository(db)
