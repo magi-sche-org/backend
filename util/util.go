@@ -138,5 +138,5 @@ func SendMail(id ulid.ULID, password, targetAddrs string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return err
+	return nil
 }
