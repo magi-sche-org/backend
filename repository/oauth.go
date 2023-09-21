@@ -17,6 +17,7 @@ import (
 
 type OauthRepository interface {
 	RegisterProvider(ctx context.Context, op entity.OauthProvider) (entity.OauthProvider, error)
+	FetchProviders(ctx context.Context) ([]entity.OauthProvider, error)
 	FetchProviderByName(ctx context.Context, name string) (entity.OauthProvider, error)
 	RegisterOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error)
 	UpdateOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error)
@@ -49,6 +50,23 @@ func (oar *oauthRepository) RegisterProvider(ctx context.Context, op entity.Oaut
 		return entity.OauthProvider{}, fmt.Errorf("failed to convert OauthProviderModel to entity on RegisterProvider: %w", err)
 	}
 	return *newOp, nil
+}
+
+// FetchProviders implements OauthRepository.
+func (or *oauthRepository) FetchProviders(ctx context.Context) ([]entity.OauthProvider, error) {
+	opms, err := models.OauthProviders().All(ctx, or.db)
+	if err != nil {
+		return nil, err
+	}
+	ops := make([]entity.OauthProvider, len(opms))
+	for i, opm := range opms {
+		op, err := converter.OauthProviderModelToEntity(ctx, opm)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert OauthProviderModel to entity on FetchProviders: %w", err)
+		}
+		ops[i] = *op
+	}
+	return ops, nil
 }
 
 // FetchProviderByName implements OauthRepository.
