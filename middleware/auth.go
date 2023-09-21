@@ -115,7 +115,7 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 				am.logger.Warn("user auth failed", zap.Error(errors.New("token is empty")))
 				return apperror.NewUnauthorizedError(errors.New("token is empty"), nil, "4000-02")
 			}
-			log.Println(tokenString)
+			// log.Println(tokenString)
 			userId, err = am.verifyAccessToken(ctx, tokenString)
 			if err != nil {
 				if !errors.Is(err, jwt.ErrTokenExpired) {
@@ -134,18 +134,34 @@ func (am *authMiddleware) SessionHandler(next echo.HandlerFunc) echo.HandlerFunc
 		if needCheckRefreshToken {
 			refreshCookie, err := c.Cookie("refreshToken")
 			if err != nil {
-				am.logger.Warn("user auth failed", zap.Error(fmt.Errorf("refresh token must be set: %w", err)))
-				return apperror.NewUnauthorizedError(errors.New("refresh token must be set"), nil, "4000-03")
-			}
-			refreshTokenString := refreshCookie.Value
-			token, err := am.au.RefreshToken(ctx, refreshTokenString)
-			if err != nil {
-				return err
-			}
-			util.SetTokenCookie(c, *am.cfg, token)
-			userId, err = am.verifyAccessToken(ctx, token.AccessToken)
-			if err != nil {
-				return err
+				if errors.Is(err, http.ErrNoCookie) {
+					user, err := am.uu.CreateAnonymousUser(ctx)
+					if err != nil {
+						return apperror.NewInternalError(err, nil, "failed to create anonymous user")
+					}
+					token, err := am.au.CreateToken(ctx, user)
+					if err != nil {
+						return apperror.NewInternalError(err, nil, "failed to create token")
+					}
+					util.SetTokenCookie(c, *am.cfg, token)
+					userId = user.ID
+					am.logger.Info("user automatically created", zap.String("user_id", userId.String()))
+				} else {
+					return apperror.NewInternalError(errors.New("failed on check refreshtoken"), nil, "xxxx-xx")
+				}
+				// am.logger.Warn("user auth failed", zap.Error(fmt.Errorf("refresh token must be set: %w", err)))
+				// return apperror.NewUnauthorizedError(errors.New("refresh token must be set"), nil, "4000-03")
+			} else {
+				refreshTokenString := refreshCookie.Value
+				token, err := am.au.RefreshToken(ctx, refreshTokenString)
+				if err != nil {
+					return err
+				}
+				util.SetTokenCookie(c, *am.cfg, token)
+				userId, err = am.verifyAccessToken(ctx, token.AccessToken)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
