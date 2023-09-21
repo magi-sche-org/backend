@@ -48,3 +48,11 @@ type EventTimeUnitResponse struct {
 	StartsAt time.Time `json:"startsAt"`
 	EndsAt   time.Time `json:"endsAt"`
 }
+
+type Confirm struct {
+	ID                   ulid.ULID `json:"id"`
+	EventID              ulid.ULID `json:"-"`
+	NotifyByEmail        bool      `json:"notifyByEmail"`
+	NumberOfParticipants int       `json:"numberOfParticipants"`
+	ConfirmationEmail    string    `json:"confirmationEmail"`
+}
