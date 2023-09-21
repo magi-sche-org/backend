@@ -124,8 +124,9 @@ func SendMail(id ulid.ULID, password, targetAddrs string) error {
 	port := 587                         // SMTPサーバーのポート番号
 	from := "magische@gmail.com"        // 送信元のメールアドレス
 	recipients := []string{targetAddrs} // 送信先のメールアドレス
-	title := "magische 予約完了のお知らせ"       // メールのタイトル
-	body := "test"                      // メールの本文
+	title := "magische 全員回答完了のお知らせ"     // メールのタイトル
+	body := ("全員が回答しました！\n" +
+		"確認してください！\n") // メールの本文
 
 	auth := smtp.PlainAuth("", targetAddrs, password, hostname)
 	msg := []byte(strings.ReplaceAll(fmt.Sprintf(
