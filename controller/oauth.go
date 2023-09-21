@@ -83,6 +83,14 @@ func (oc *oauthController) RedirectToAuthPage(c echo.Context) error {
 // Callback implements OauthController.
 func (oc *oauthController) Callback(c echo.Context) error {
 	ctx := c.Request().Context()
+	acuser, err := appcontext.Extract(ctx).GetUser()
+	var acuserp *entity.User
+	if err != nil {
+		acuserp = nil
+	} else {
+		acuserp = &acuser
+	}
+
 	// state check
 	stateCookie, err := c.Cookie("state")
 	if err != nil {
@@ -117,22 +125,9 @@ func (oc *oauthController) Callback(c echo.Context) error {
 	}
 
 	// get token
-	token, err := oc.oau.LoginGoogleWithCode(ctx, c.QueryParam("code"))
+	user, err := oc.oau.LoginGoogleWithCode(ctx, acuserp, c.QueryParam("code"))
 	if err != nil {
 		return fmt.Errorf("error on LoginGoogleWithCode: %w", err)
-	}
-
-	acuser, err := appcontext.Extract(ctx).GetUser()
-	var acuserp *entity.User
-	if err != nil {
-		acuserp = nil
-	} else {
-		acuserp = &acuser
-	}
-	log.Println(acuser, acuserp)
-	user, err := oc.oau.FetchAndRegisterOauthUserInfo(ctx, token, acuserp)
-	if err != nil {
-		return fmt.Errorf("error on FetchAndRegisterOauthUserInfo: %w", err)
 	}
 	log.Println(acuser, acuserp, user)
 	sToken, err := oc.au.CreateToken(ctx, user)

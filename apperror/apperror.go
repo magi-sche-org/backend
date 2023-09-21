@@ -102,6 +102,16 @@ func NewInvalidRequestPathError(ierr error, detail any) *AppError {
 	}
 }
 
+func NewInvalidRequestQueryError(ierr error, detail any) *AppError {
+	return &AppError{
+		StatusCode:     http.StatusBadRequest,
+		ErrorCode:      InvalidRequestQuery,
+		Message:        "invalid request query",
+		Detail:         detail,
+		internalDetail: ierr,
+	}
+}
+
 func NewMissingCSRFTokenError(ierr error) *AppError {
 	return &AppError{
 		StatusCode:     http.StatusBadRequest,

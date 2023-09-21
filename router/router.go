@@ -40,7 +40,7 @@ func NewRouter(
 	eug.Use(am.SessionHandler)
 	eug.GET("", uc.Get)
 	// eug.GET("/events", uc.GetEvents)
-	eug.GET("/external_events", uc.GetExternalCalendars)
+	eug.GET("/external/calendars", uc.GetExternalCalendars)
 
 	// // ユーザー登録
 	// e.POST("/users", uc.Register)

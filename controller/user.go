@@ -2,10 +2,12 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/geekcamp-vol11-team30/backend/appcontext"
 	"github.com/geekcamp-vol11-team30/backend/apperror"
+	"github.com/geekcamp-vol11-team30/backend/controller/internal/types"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/labstack/echo/v4"
@@ -60,12 +62,17 @@ func (uc *userController) Get(c echo.Context) error {
 func (uc *userController) GetExternalCalendars(c echo.Context) error {
 	ctx := c.Request().Context()
 	user, err := appcontext.Extract(ctx).GetUser()
-
 	if err != nil {
 		return err
 	}
 
-	events, err := uc.uu.FetchExternalCalendars(ctx, user)
+	req := types.ExternalEventRequest{}
+	if err := c.Bind(&req); err != nil {
+		return apperror.NewInvalidRequestQueryError(err, nil)
+	}
+	fmt.Printf("req: %+v\n", req)
+
+	events, err := uc.uu.FetchExternalCalendars(ctx, user, req.TimeMin, req.TimeMax)
 	if err != nil {
 		return apperror.NewInternalError(err, "failed to fetch external calendars", "failed to fetch external calendars")
 	}
