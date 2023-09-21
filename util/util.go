@@ -121,9 +121,10 @@ func MakeRandomStr(digit int) (string, error) {
 }
 
 func SendMail(id ulid.ULID, targetAddrs string) error {
-	hostname := "smtp.gmail.com" // SMTPサーバーのホスト名
-	port := 587                  // SMTPサーバーのポート番号
+	hostname := os.Getenv("SMTP_MAIL") // SMTPサーバーのホスト名
+	port := os.Getenv("SMTP_PORT")     // SMTPサーバーのポート番号
 	password := os.Getenv("SMTP_PASSWORD")
+
 	from := "magische@gmail.com"        // 送信元のメールアドレス
 	recipients := []string{targetAddrs} // 送信先のメールアドレス
 	title := "magische 全員回答完了のお知らせ"     // メールのタイトル
