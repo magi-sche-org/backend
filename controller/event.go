@@ -160,7 +160,7 @@ func eventRequestToEvent(er entity.EventRequest) entity.Event {
 	units := make([]entity.EventTimeUnit, len(eur))
 	for i, u := range eur {
 		units[i] = entity.EventTimeUnit{
-			TimeSlot: u.TimeSlot,
+			TimeSlot: u.StartsAt,
 		}
 	}
 	return entity.Event{

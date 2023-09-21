@@ -41,7 +41,7 @@ type EventTimeUnit struct {
 	SlotSeconds int       `json:"slotSeconds"`
 }
 type EventTimeUnitRequest struct {
-	TimeSlot time.Time `json:"timeSlot"`
+	StartsAt time.Time `json:"startsAt"`
 }
 type EventTimeUnitResponse struct {
 	ID       string    `json:"id"`
