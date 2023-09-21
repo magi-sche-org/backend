@@ -51,9 +51,9 @@ func NewRouter(
 
 	// Oauth関連
 	og := e.Group("/oauth2")
-	og.Use(am.IfLoginSessionHandler)
-	og.GET("/google", oc.RedirectToAuthPage)
-	og.GET("/google/callback", oc.Callback)
+	// og.Use(am.IfLoginSessionHandler)
+	og.GET("/google", oc.RedirectToAuthPage, am.IfLoginSessionHandler)
+	og.GET("/google/callback", oc.Callback, am.SessionHandler)
 
 	// イベント関連
 	eg := e.Group("/events")
