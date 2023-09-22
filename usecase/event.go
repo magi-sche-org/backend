@@ -156,6 +156,12 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 	}
 	newAnswer.Units = ansUnits
 
+	// ユーザーの回答数を数える
+	userAnswerCount, err := eu.er.FetchUserAnswerCount(ctx, tx, eventId)
+	if userAnswerCount != 0 {
+		return entity.UserEventAnswer{}, err
+	}
+
 	// commit!
 	err = tx.Commit()
 	if err != nil {
