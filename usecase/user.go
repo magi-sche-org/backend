@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/repository"
@@ -14,8 +15,10 @@ import (
 type UserUsecase interface {
 	CreateAnonymousUser(ctx context.Context) (entity.User, error)
 	FindUserByID(ctx context.Context, id ulid.ULID) (entity.User, error)
+
+	RetrieveUserProviders(ctx context.Context, user entity.User) ([]entity.OauthProvider, []entity.OauthUserInfo, error)
 	// Register(ctx context.Context, user entity.User) ([]entity.CalendarEvent, error)
-	FetchExternalCalendars(ctx context.Context, user entity.User) ([][]entity.CalendarEvent, error)
+	FetchExternalCalendars(ctx context.Context, user entity.User, timeMin *time.Time, timeMax *time.Time) ([]entity.Calendar, error)
 }
 
 type userUsecase struct {
@@ -57,6 +60,20 @@ func (uu *userUsecase) FindUserByID(ctx context.Context, id ulid.ULID) (entity.U
 	return user, nil
 }
 
+// RetrieveUserProviders implements UserUsecase.
+func (uu *userUsecase) RetrieveUserProviders(ctx context.Context, user entity.User) ([]entity.OauthProvider, []entity.OauthUserInfo, error) {
+	ouis, err := uu.oar.FetchOauthUserInfos(ctx, user)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch oauth user infos: %w", err)
+	}
+	ops, err := uu.oar.FetchProviders(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch providers: %w", err)
+	}
+	return ops, ouis, nil
+
+}
+
 // // Register implements UserUsecase.
 // func (uu *userUsecase) Register(ctx context.Context, user entity.User) ([]entity.CalendarEvent, error) {
 // 	gp, err := uu.oar.FetchProviderByName(ctx, "google")
@@ -91,27 +108,28 @@ func (uu *userUsecase) FindUserByID(ctx context.Context, id ulid.ULID) (entity.U
 // }
 
 // FetchExternalCalendars implements UserUsecase.
-func (uu *userUsecase) FetchExternalCalendars(ctx context.Context, user entity.User) ([][]entity.CalendarEvent, error) {
+func (uu *userUsecase) FetchExternalCalendars(ctx context.Context, user entity.User, timeMin *time.Time, timeMax *time.Time) ([]entity.Calendar, error) {
 	ouis, err := uu.oar.FetchOauthUserInfos(ctx, user)
 	if err != nil {
-		return [][]entity.CalendarEvent{}, fmt.Errorf("failed to fetch oauth user infos: %w", err)
+		return nil, fmt.Errorf("failed to fetch oauth user infos: %w", err)
 	}
-	fmt.Printf("ouis: %+v\n%+v\n", ouis, ouis[0].Provider)
+	// fmt.Printf("ouis: %+v\n%+v\n", ouis, ouis[0].Provider)
 
-	eventsAll := [][]entity.CalendarEvent{}
+	// eventsAll := [][]entity.CalendarEvent{}
+	calendars := []entity.Calendar{}
 
 	for _, oui := range ouis {
-		fmt.Printf("oui: %+v\n", oui)
+		// fmt.Printf("oui: %+v\n", oui)
 		// oui.Provider
 		if oui.Provider.Name == "google" {
-			events, err := uu.gs.GetEvents(ctx, oui)
+			calendar, err := uu.gs.GetPrimaryCalendar(ctx, oui, timeMin, timeMax)
 			if err != nil {
-				return [][]entity.CalendarEvent{}, fmt.Errorf("failed to get events: %w", err)
+				return nil, fmt.Errorf("failed to get events: %w", err)
 			}
 			// fmt.Printf("events: %+v\n", events)
-			eventsAll = append(eventsAll, events)
+			calendars = append(calendars, calendar)
 		}
 	}
 
-	return eventsAll, nil
+	return calendars, nil
 }

@@ -41,18 +41,18 @@ func run(ctx context.Context, logger *zap.Logger) error {
 		return err
 	}
 	boil.SetDB(db)
-	boil.DebugMode = cfg.Env == "dev"
+	boil.DebugMode = cfg.SqlLog
 
 	ur := repository.NewUserRepository(db)
 	ar := repository.NewAuthRepository(db)
 	er := repository.NewEventRepository(db)
 	oar := repository.NewOauthRepository(db)
-	gs := service.NewGoogleService(cfg, oar)
+	gs := service.NewGoogleService(cfg, oar, ur)
 	uv := validator.NewUserValidator()
 	uu := usecase.NewUserUsecase(ur, oar, uv, gs)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
 	eu := usecase.NewEventUsecase(er)
-	oau := usecase.NewOauthUsecase(cfg, oar, ur, uu)
+	oau := usecase.NewOauthUsecase(cfg, oar, ur, gs, uu)
 
 	em := middleware.NewErrorMiddleware(logger, uu)
 	atm := middleware.NewAccessTimeMiddleware()

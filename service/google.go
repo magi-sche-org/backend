@@ -9,6 +9,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/repository"
 	"github.com/geekcamp-vol11-team30/backend/service/internal/converter"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/calendar/v3"
@@ -16,15 +17,24 @@ import (
 	"google.golang.org/api/option"
 )
 
+const idPrimary = "primary"
+const maxFetchEvents = 5000
+const onceFetchEvents = 1000
+
 type GoogleService interface {
-	GetEvents(ctx context.Context, oui entity.OauthUserInfo) ([]entity.CalendarEvent, error)
+	GetGoogleAuthURL(ctx context.Context) (url string, state string, err error)
+	ExchangeToken(ctx context.Context, code string) (*oauth2.Token, error)
+	GetOrCreateUserByCode(ctx context.Context, code string, user *entity.User) (*entity.User, error)
+	GetPrimaryCalendar(ctx context.Context, oui entity.OauthUserInfo, timeMin *time.Time, timeMax *time.Time) (entity.Calendar, error)
 }
 
 type googleService struct {
 	googleCfg *oauth2.Config
+	oar       repository.OauthRepository
+	ur        repository.UserRepository
 }
 
-func NewGoogleService(cfg *config.Config, oar repository.OauthRepository) GoogleService {
+func NewGoogleService(cfg *config.Config, oar repository.OauthRepository, ur repository.UserRepository) GoogleService {
 
 	p, err := oar.RegisterProvider(context.Background(), entity.OauthProvider{
 		Name:         "google",
@@ -46,101 +56,286 @@ func NewGoogleService(cfg *config.Config, oar repository.OauthRepository) Google
 			"https://www.googleapis.com/auth/calendar.readonly",
 		},
 	}
-	fmt.Printf("gcfguc: %+v\n", gcfg)
+	// fmt.Printf("gcfguc: %+v\n", gcfg)
 	return &googleService{
 		googleCfg: gcfg,
+		oar:       oar,
+		ur:        ur,
 	}
 }
 
-func (gs googleService) GetEvents(ctx context.Context, oui entity.OauthUserInfo) ([]entity.CalendarEvent, error) {
-	// accessTokenExpires := oui.AccessTokenExpiresAt
-	// bufferedExpires := accessTokenExpires.Add(-1 * time.Minute)
-	// now := appcontext.Extract(ctx).Now
+// GetGoogleAuthURL implements GoogleService.
+func (gs *googleService) GetGoogleAuthURL(ctx context.Context) (url string, state string, err error) {
+	state, err = util.MakeRandomStr(32)
+	if err != nil {
+		return "", "", err
+	}
+	url = gs.googleCfg.AuthCodeURL(
+		state,
+		oauth2.AccessTypeOffline,
+		oauth2.ApprovalForce,
+	)
+	return url, state, nil
+}
 
-	// if now.After(bufferedExpires) {
-	// 	token := &oauth2.Token{
-	// 		AccessToken:  oui.AccessToken,
-	// 		RefreshToken: oui.RefreshToken,
-	// 		Expiry:       accessTokenExpires,
-	// 	}
-	// }
+// ExchangeToken implements GoogleService.
+func (gs *googleService) ExchangeToken(ctx context.Context, code string) (*oauth2.Token, error) {
+	token, err := gs.googleCfg.Exchange(
+		ctx,
+		code,
+		oauth2.AccessTypeOffline,
+		oauth2.ApprovalForce,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to exchange token: %w", err)
+	}
+	return token, nil
+}
 
-	// TODO: refresh時にはDBのtokenを更新する
-	token := converter.OauthUserInfoEntityToOauth2Token(oui)
+// user infoがあれば，それに紐付いたユーザーを返す。なければ，新規ユーザーを作成して返す
+func (gs *googleService) GetOrCreateUserByCode(ctx context.Context, code string, user *entity.User) (*entity.User, error) {
+	token, err := gs.googleCfg.Exchange(
+		ctx,
+		code,
+		oauth2.AccessTypeOffline,
+		oauth2.ApprovalForce,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to exchange token: %w", err)
+	}
+
 	tokenSource := gs.googleCfg.TokenSource(ctx, token)
+
 	service, err := v2.NewService(ctx, option.WithTokenSource(tokenSource))
 	if err != nil {
-		return []entity.CalendarEvent{}, fmt.Errorf("failed to create google calendar service: %w", err)
-	}
-	userinfo, err := service.Userinfo.Get().Do()
-	if err != nil {
-		return []entity.CalendarEvent{}, fmt.Errorf("failed to get userinfo: %w", err)
+		return nil, fmt.Errorf("failed to create google calendar service: %w", err)
 	}
 
+	// UIDなど取得
+	tokenInfo, err := service.Tokeninfo().AccessToken(token.AccessToken).Context(ctx).Do()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token info: %w", err)
+	}
+
+	provider, err := gs.oar.FetchProviderByName(ctx, "google")
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch provider by name: %w", err)
+	}
+
+	{
+		// 既に登録済みのUIDなら，そのユーザーを返しトークン更新（ログイン中は無視）
+		oui, err := gs.oar.FetchUserInfoByUid(ctx, provider.ID, tokenInfo.UserId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch user info by uid: %w", err)
+		}
+
+		// 既に登録済みのUIDなら，そのユーザーを返しトークン更新（ログイン中は無視）
+		if oui != nil {
+			user, err := gs.ur.Find(ctx, oui.UserId)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find user: %w", err)
+			}
+			_, err = gs.checkAndUpdateRepoToken(ctx, tokenSource, *oui)
+			if err != nil {
+				return nil, fmt.Errorf("failed to check and update repo token: %w", err)
+			}
+			return &user, nil
+		}
+	}
+
+	// 未登録のUIDなら，新規ユーザー登録
+	userInfo, err := service.Userinfo.Get().Context(ctx).Do()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get userinfo: %w", err)
+	}
+
+	if user != nil { // 既にログイン中
+		// IsRegisteredでなければ名前を設定，IsRegisteredへ
+		if !user.IsRegistered {
+			user.Name = userInfo.Name
+			user.IsRegistered = true
+			err = gs.ur.Update(ctx, *user)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update user: %w", err)
+			}
+		}
+	} else { // 新規登録
+		user = &entity.User{
+			Name:         userInfo.Name,
+			IsRegistered: true,
+		}
+		_, err = gs.ur.Create(ctx, *user)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+
+	oui := entity.OauthUserInfo{
+		UserId:                user.ID,
+		ProviderId:            provider.ID,
+		ProviderUid:           tokenInfo.UserId,
+		AccessToken:           token.AccessToken,
+		RefreshToken:          token.RefreshToken,
+		AccessTokenExpiresAt:  token.Expiry,
+		RefreshTokenExpiresAt: nil,
+	}
+	_, err = gs.oar.RegisterOauthUserInfo(ctx, oui)
+	if err != nil {
+		return &entity.User{}, err
+	}
+	return user, nil
+
+}
+
+// GetPrimaryCalendar implements GoogleService.
+func (gs *googleService) GetPrimaryCalendar(ctx context.Context, oui entity.OauthUserInfo, timeMin *time.Time, timeMax *time.Time) (entity.Calendar, error) {
+	tokenSource, err := gs.fetchTokenSource(ctx, oui)
+	if err != nil {
+		return entity.Calendar{}, fmt.Errorf("failed to fetch token source: %w", err)
+	}
+	calendarService, err := gs.fetchCalendarService(ctx, tokenSource)
+	if err != nil {
+		return entity.Calendar{}, fmt.Errorf("failed to fetch calendar service: %w", err)
+	}
+	events, summary, err := gs.fetchEventsByCalendarID(ctx, calendarService, idPrimary, timeMin, timeMax)
+	if err != nil {
+		return entity.Calendar{}, fmt.Errorf("failed to get events: %w", err)
+	}
+
+	calendar, err := converter.GoogleCalendarEventsToEntity(events, idPrimary, summary)
+	if err != nil {
+		return entity.Calendar{}, fmt.Errorf("failed to convert events to entity: %w", err)
+	}
+	return calendar, nil
+}
+
+// func (gs googleService) GetEvents(ctx context.Context, oui entity.OauthUserInfo, timeMin time.Time, timeMax time.Time) ([]entity.CalendarEvent, error) {
+// 	tokenSource, err := gs.fetchTokenSource(ctx, oui)
+// 	if err != nil {
+// 		return []entity.CalendarEvent{}, fmt.Errorf("failed to fetch token source: %w", err)
+// 	}
+
+// 	calendarService, err := gs.fetchCalendarService(ctx, tokenSource)
+// 	if err != nil {
+// 		return []entity.CalendarEvent{}, fmt.Errorf("failed to fetch calendar service: %w", err)
+// 	}
+
+// 	calendarList, err := gs.fetchCalendarList(ctx, calendarService)
+// 	if err != nil {
+// 		return []entity.CalendarEvent{}, fmt.Errorf("failed to get calendar list: %w", err)
+// 	}
+// 	fmt.Printf("calendarList: %+v\n", calendarList)
+
+// 	events, err := gs.fetchEventsByCalendarID(ctx, calendarService, idPrimary, timeMin, timeMax)
+// 	if err != nil {
+// 		return []entity.CalendarEvent{}, fmt.Errorf("failed to get events: %w", err)
+// 	}
+
+// 	eventsEntity, err := converter.GoogleCalendarEventsToEntity(events, idPrimary)
+// 	if err != nil {
+// 		return []entity.CalendarEvent{}, fmt.Errorf("failed to convert events to entity: %w", err)
+// 	}
+
+// 	return eventsEntity, nil
+// }
+
+func (gs googleService) fetchTokenSource(ctx context.Context, oui entity.OauthUserInfo) (oauth2.TokenSource, error) {
+	token := converter.OauthUserInfoEntityToOauth2Token(oui)
+	tokenSource := gs.googleCfg.TokenSource(ctx, token)
+
+	_, err := gs.checkAndUpdateRepoToken(ctx, tokenSource, oui)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check and update repo token: %w", err)
+	}
+	return tokenSource, nil
+}
+
+func (gs googleService) checkAndUpdateRepoToken(ctx context.Context, tokenSource oauth2.TokenSource, oui entity.OauthUserInfo) (entity.OauthUserInfo, error) {
+	token, err := tokenSource.Token()
+	if err != nil {
+		return oui, fmt.Errorf("failed to get new token: %w", err)
+	}
+
+	if oui.AccessToken == token.AccessToken {
+		return oui, nil
+	}
+	oui.AccessToken = token.AccessToken
+	oui.AccessTokenExpiresAt = token.Expiry
+	oui.RefreshToken = token.RefreshToken
+	oui, err = gs.oar.UpdateOauthUserInfo(ctx, oui)
+	if err != nil {
+		return entity.OauthUserInfo{}, fmt.Errorf("failed to update oauth user info: %w", err)
+	}
+	return oui, nil
+}
+
+// func (gs googleService) fetchUserInfo(ctx context.Context, tokenSource oauth2.TokenSource) (*v2.Userinfo, error) {
+// 	service, err := v2.NewService(ctx, option.WithTokenSource(tokenSource))
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to create google calendar service: %w", err)
+// 	}
+// 	userInfo, err := service.Userinfo.Get().Do()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to get userinfo: %w", err)
+// 	}
+// 	return userInfo, nil
+// }
+
+func (gs googleService) fetchCalendarService(ctx context.Context, tokenSource oauth2.TokenSource) (*calendar.Service, error) {
 	calendarService, err := calendar.NewService(
 		ctx,
 		option.WithTokenSource(tokenSource),
 	// option.WithScopes(calendar.CalendarSettingsReadonlyScope),
 	)
 	if err != nil {
-		return []entity.CalendarEvent{}, fmt.Errorf("failed to create google calendar service: %w", err)
+		return nil, fmt.Errorf("failed to create google calendar service: %w", err)
 	}
-	fmt.Printf("calendarService: %+v\n", calendarService)
-	fmt.Printf("userinfo: %+v\n", userinfo)
+	return calendarService, nil
+}
 
-	calendarList, err := calendarService.CalendarList.List().Context(ctx).Do()
-	if err != nil {
-		return []entity.CalendarEvent{}, fmt.Errorf("failed to get calendar list: %w", err)
+// func (gs googleService) fetchCalendarList(ctx context.Context, service *calendar.Service) (*calendar.CalendarList, error) {
+// 	calendarList, err := service.CalendarList.List().Context(ctx).Do()
+
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to get calendar list: %w", err)
+// 	}
+// 	return calendarList, nil
+// }
+
+func (gs googleService) fetchEventsByCalendarID(ctx context.Context, service *calendar.Service, id string, timeMin *time.Time, timeMax *time.Time) ([]*calendar.Event, string, error) {
+	if timeMin == nil {
+		t := time.Now().Add(-time.Hour * 24 * 7)
+		timeMin = &t
 	}
-	fmt.Printf("calendarList: %+v\n", calendarList)
-
-	timeMin := time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339)
-	timeMax := time.Now().Add(time.Hour * 24 * 365).Format(time.RFC3339)
-	events, err := calendarService.Events.List("primary").SingleEvents(true).OrderBy("startTime").TimeMin(timeMin).TimeMax(timeMax).MaxResults(2500).Context(ctx).Do()
-	if err != nil {
-		return []entity.CalendarEvent{}, fmt.Errorf("failed to get events: %w", err)
+	if timeMax == nil {
+		t := time.Now().Add(time.Hour * 24 * 100)
+		timeMax = &t
 	}
-	// fmt.Printf("events: %+v\n", events)
-	eventsEntity, err := converter.CalendarEventsToEntity(events)
-	if err != nil {
-		return []entity.CalendarEvent{}, fmt.Errorf("failed to convert events to entity: %w", err)
+	summary := ""
+	nextPageToken := ""
+	items := []*calendar.Event{}
+	for {
+		// fmt.Printf("nextPageToken: %+v\n", nextPageToken)
+		events, err := service.Events.List(id).
+			EventTypes("default", "focusTime", "outOfOffice").
+			SingleEvents(true).
+			OrderBy("startTime").
+			TimeMin(timeMin.Format(time.RFC3339)).
+			TimeMax(timeMax.Format(time.RFC3339)).
+			PageToken(nextPageToken).
+			MaxResults(onceFetchEvents).
+			Context(ctx).Do()
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to get events: %w", err)
+		}
+
+		items = append(items, events.Items...)
+
+		summary = events.Summary
+		nextPageToken = events.NextPageToken
+		if nextPageToken == "" || len(items) >= maxFetchEvents {
+			break
+		}
 	}
-	// fmt.Printf("eventsEntity: %+v\n", eventsEntity)
-	fmt.Printf("name: %s", userinfo.Name)
-	return eventsEntity, nil
-
-	// client := gs.googleCfg.Client(ctx, token)
-	// panic("unimplemented")
-
-	// client := oc.googleCfg.Client(ctx, token)
-
-	// 	service, err := v2.NewService(ctx, option.WithHTTPClient(client))
-	// 	if err != nil {
-	// 		return c.JSON(500, "error2")
-	// 	}
-	// 	// userinfo, err := service.Userinfo.Get().Do()
-	// 	userInfo, err := service.Tokeninfo().AccessToken(token.AccessToken).Context(ctx).Do()
-	// 	if err != nil {
-	// 		return c.JSON(500, "error3")
-	// 	}
-	// 	// get calendar info
-	// 	calendarService, err := calendar.NewService(ctx, option.WithHTTPClient(client), option.WithScopes(calendar.CalendarSettingsReadonlyScope))
-	// 	if err != nil {
-	// 		return c.JSON(500, "error4")
-	// 	}
-	// 	calendarList, err := calendarService.CalendarList.List().Context(ctx).Do()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	timeMin := time.Now().Add(-time.Hour * 24 * 7).Format(time.RFC3339)
-	// 	timeMax := time.Now().Add(time.Hour * 24 * 365).Format(time.RFC3339)
-	// 	events, err := calendarService.Events.List("primary").SingleEvents(true).OrderBy("startTime").TimeMin(timeMin).TimeMax(timeMax).MaxResults(2500).Context(ctx).Do()
-	// 	if err != nil {
-	// 		return err
-	// 		// return c.JSON(500, "error5")
-	// 	}
-	// 	// events
-	// 	return c.Redirect(302, oc.cfg.OAuth.DefaultReturnURL)
-
-	// return nil, nil
+	return items, summary, nil
 }

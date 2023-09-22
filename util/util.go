@@ -86,7 +86,7 @@ func DeleteTokenCookie(c echo.Context, cfg config.Config) {
 		// Expires:  time.Now(),
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSite(cfg.TokenSameSite),
 		MaxAge:   -1,
 	})
 	c.SetCookie(&http.Cookie{
@@ -96,7 +96,7 @@ func DeleteTokenCookie(c echo.Context, cfg config.Config) {
 		// Expires:  time.Now(),
 		Secure:   cfg.Env != "dev",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSite(cfg.TokenSameSite),
 		MaxAge:   -1,
 	})
 }

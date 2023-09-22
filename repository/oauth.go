@@ -17,8 +17,10 @@ import (
 
 type OauthRepository interface {
 	RegisterProvider(ctx context.Context, op entity.OauthProvider) (entity.OauthProvider, error)
+	FetchProviders(ctx context.Context) ([]entity.OauthProvider, error)
 	FetchProviderByName(ctx context.Context, name string) (entity.OauthProvider, error)
 	RegisterOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error)
+	UpdateOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error)
 	FetchOauthUserInfos(ctx context.Context, user entity.User) ([]entity.OauthUserInfo, error)
 	FetchOauthUserInfo(ctx context.Context, providerId ulid.ULID, user entity.User) (entity.OauthUserInfo, error)
 	FetchUserInfoByUid(ctx context.Context, providerId ulid.ULID, uid string) (*entity.OauthUserInfo, error)
@@ -48,6 +50,23 @@ func (oar *oauthRepository) RegisterProvider(ctx context.Context, op entity.Oaut
 		return entity.OauthProvider{}, fmt.Errorf("failed to convert OauthProviderModel to entity on RegisterProvider: %w", err)
 	}
 	return *newOp, nil
+}
+
+// FetchProviders implements OauthRepository.
+func (or *oauthRepository) FetchProviders(ctx context.Context) ([]entity.OauthProvider, error) {
+	opms, err := models.OauthProviders().All(ctx, or.db)
+	if err != nil {
+		return nil, err
+	}
+	ops := make([]entity.OauthProvider, len(opms))
+	for i, opm := range opms {
+		op, err := converter.OauthProviderModelToEntity(ctx, opm)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert OauthProviderModel to entity on FetchProviders: %w", err)
+		}
+		ops[i] = *op
+	}
+	return ops, nil
 }
 
 // FetchProviderByName implements OauthRepository.
@@ -82,6 +101,22 @@ func (oar *oauthRepository) RegisterOauthUserInfo(ctx context.Context, oui entit
 	newOui, err := converter.OauthUserInfoModelToEntity(ctx, ouim)
 	if err != nil {
 		return entity.OauthUserInfo{}, fmt.Errorf("failed to convert OauthUserInfoModel to entity on RegisterOauthUserInfo: %w", err)
+	}
+	return newOui, nil
+}
+
+// UpdateOauthUserInfo implements OauthRepository.
+func (oar *oauthRepository) UpdateOauthUserInfo(ctx context.Context, oui entity.OauthUserInfo) (entity.OauthUserInfo, error) {
+	ouim := converter.OauthUserInfoEntityToModel(ctx, oui)
+
+	_, err := ouim.Update(ctx, oar.db, boil.Infer())
+	if err != nil {
+		return entity.OauthUserInfo{}, fmt.Errorf("failed to update OauthUserInfoModel: %w", err)
+	}
+
+	newOui, err := converter.OauthUserInfoModelToEntity(ctx, ouim)
+	if err != nil {
+		return entity.OauthUserInfo{}, fmt.Errorf("failed to convert OauthUserInfoModel to entity on UpdateOauthUserInfo: %w", err)
 	}
 	return newOui, nil
 }

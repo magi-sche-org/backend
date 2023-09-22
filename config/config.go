@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/caarlos0/env/v9"
@@ -84,7 +83,7 @@ func New() (*Config, error) {
 	if err := env.Parse(config); err != nil {
 		return nil, err
 	}
-	log.Printf("config: %+v", config)
+	// log.Printf("config: %+v", config)
 
 	return config, nil
 }
