@@ -15,7 +15,6 @@ type Event struct {
 	UnitSeconds          int               `json:"unitSeconds"`
 	Units                []EventTimeUnit   `json:"units"`
 	UserAnswers          []UserEventAnswer `json:"userAnswers"`
-	UserAnswersCount     int               `json:"userAnswersCount"`
 	NotifyByEmail        bool              `json:"notifyByEmail"`
 	NumberOfParticipants int               `json:"numberOfParticipants"`
 	ConfirmationEmail    string            `json:"confirmationEmail"`

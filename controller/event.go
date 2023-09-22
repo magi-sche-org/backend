@@ -121,12 +121,6 @@ func (ec *eventController) CreateAnswer(c echo.Context) error {
 		return err
 	}
 
-	// すべての回答が集まったら，確定メールを送る
-	if event.UserAnswersCount == event.NumberOfParticipants {
-		if err := util.SendMail(event.ID, event.ConfirmationEmail); err != nil {
-			return apperror.NewUnknownError(fmt.Errorf("failed to send confirmation email: %w", err), nil)
-		}
-	}
 	eventRes := eventToEventResponse(event, user)
 	i := slices.IndexFunc(eventRes.UserAnswers, func(answer entity.UserEventAnswerResponse) bool {
 		return answer.IsYourAnswer

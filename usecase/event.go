@@ -11,6 +11,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/apperror"
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/repository"
+	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/oklog/ulid/v2"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 )
@@ -156,10 +157,16 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 	}
 	newAnswer.Units = ansUnits
 
-	// ユーザーの回答数を数える
-	userAnswerCount, err := eu.er.FetchUserAnswerCount(ctx, tx, eventId)
-	if userAnswerCount != 0 {
-		return entity.UserEventAnswer{}, err
+	// メールの通知を希望するなら
+	if event.NotifyByEmail {
+		// ユーザーの回答数を数える
+		userAnswerCount, err := eu.er.FetchUserAnswerCount(ctx, tx, eventId)
+		if userAnswerCount != event.NumberOfParticipants {
+			util.SendMail(event.ID, event.ConfirmationEmail)
+			if err != nil {
+				return entity.UserEventAnswer{}, apperror.NewUnknownError(fmt.Errorf("failed to send confirmation email: %w", err), nil)
+			}
+		}
 	}
 
 	// commit!
