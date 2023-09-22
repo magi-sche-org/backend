@@ -162,7 +162,7 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 		// ユーザーの回答数を数える
 		userAnswerCount, err := eu.er.FetchUserAnswerCount(ctx, tx, eventId)
 		if userAnswerCount != event.NumberOfParticipants {
-			util.SendMail(event.ID, event.ConfirmationEmail)
+			util.SendMail(event.ConfirmationEmail, "マジスケ", "イベント参加者が集まりました")
 			if err != nil {
 				return entity.UserEventAnswer{}, apperror.NewUnknownError(fmt.Errorf("failed to send confirmation email: %w", err), nil)
 			}
