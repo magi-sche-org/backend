@@ -53,13 +53,15 @@ func NewOauthController(cfg *config.Config, oau usecase.OauthUsecase, uu usecase
 
 // RedirectToAuthPage implements OauthController.
 func (oc *oauthController) RedirectToAuthPage(c echo.Context) error {
+
 	// get next parameter if exists
 	next := c.QueryParam("next")
 	if next == "" {
 		next = oc.cfg.OAuth.DefaultReturnURL
 	}
 
-	url, state, err := oc.oau.GetGoogleAuthURL(c.Request().Context())
+	provider := c.Param("provider")
+	url, state, err := oc.oau.GetAuthURL(c.Request().Context(), provider)
 	if err != nil {
 		return err
 	}
@@ -124,8 +126,9 @@ func (oc *oauthController) Callback(c echo.Context) error {
 		return c.JSON(400, "invalid state")
 	}
 
+	provider := c.Param("provider")
 	// get token
-	user, err := oc.oau.LoginGoogleWithCode(ctx, acuserp, c.QueryParam("code"))
+	user, err := oc.oau.LoginWithCode(ctx, provider, acuserp, c.QueryParam("code"))
 	if err != nil {
 		return fmt.Errorf("error on LoginGoogleWithCode: %w", err)
 	}

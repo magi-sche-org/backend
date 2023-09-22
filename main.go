@@ -48,11 +48,12 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	er := repository.NewEventRepository(db)
 	oar := repository.NewOauthRepository(db)
 	gs := service.NewGoogleService(cfg, oar, ur)
+	ms := service.NewMicrosoftService(cfg, oar, ur)
 	uv := validator.NewUserValidator()
 	uu := usecase.NewUserUsecase(ur, oar, uv, gs)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
 	eu := usecase.NewEventUsecase(er)
-	oau := usecase.NewOauthUsecase(cfg, oar, ur, gs, uu)
+	oau := usecase.NewOauthUsecase(cfg, oar, ur, gs, ms, uu)
 
 	em := middleware.NewErrorMiddleware(logger, uu)
 	atm := middleware.NewAccessTimeMiddleware()

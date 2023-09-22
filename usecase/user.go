@@ -25,10 +25,10 @@ type userUsecase struct {
 	ur  repository.UserRepository
 	oar repository.OauthRepository
 	uv  validator.UserValidator
-	gs  service.GoogleService
+	gs  service.OauthCalendarService
 }
 
-func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, uv validator.UserValidator, gs service.GoogleService) UserUsecase {
+func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, uv validator.UserValidator, gs service.OauthCalendarService) UserUsecase {
 	return &userUsecase{
 		ur:  ur,
 		oar: oar,
