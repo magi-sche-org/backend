@@ -27,7 +27,7 @@ type CalendarEvent struct {
 	StartDate   *Date      `json:"startDate"`
 	EndDate     *Date      `json:"endDate"`
 	IsAllDay    bool       `json:"isAllDay"`
-	URL         string     `json:"url"`
+	URL         *string    `json:"url"`
 	DisplayOnly bool       `json:"displayOnly"`
 }
 type CalendarEvents []CalendarEvent

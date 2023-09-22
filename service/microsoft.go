@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
+	"slices"
 
 	// "errors"
 	"fmt"
@@ -14,6 +16,7 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/repository"
 	"github.com/geekcamp-vol11-team30/backend/service/internal/converter"
+	"github.com/geekcamp-vol11-team30/backend/service/internal/types"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/microsoft"
@@ -82,15 +85,6 @@ func (ms *microsoftService) GetAuthURL(ctx context.Context) (url string, state s
 	return url, state, nil
 }
 
-type msUserResponse struct {
-	Id          string `json:"id"`
-	DisplayName string `json:"displayName"`
-}
-
-type msCalendarEventResponse struct {
-	Subject string `json:"subject"`
-}
-
 // GetOrCreateUserByCode implements OauthCalendarService.
 func (gs *microsoftService) GetOrCreateUserByCode(ctx context.Context, code string, user *entity.User) (*entity.User, error) {
 	token, err := gs.msCfg.Exchange(
@@ -121,7 +115,7 @@ func (gs *microsoftService) GetOrCreateUserByCode(ctx context.Context, code stri
 	}
 	fmt.Printf("body: %+v\n", string(body))
 
-	var msUser msUserResponse
+	var msUser types.MsUser
 	if err := json.Unmarshal(body, &msUser); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
@@ -218,6 +212,18 @@ func (gs *microsoftService) GetOrCreateUserByCode(ctx context.Context, code stri
 
 // GetPrimaryCalendar implements OauthCalendarService.
 func (ms *microsoftService) GetPrimaryCalendar(ctx context.Context, oui entity.OauthUserInfo, timeMin *time.Time, timeMax *time.Time) (entity.Calendar, error) {
+	if timeMin == nil {
+		t := time.Now().Add(-time.Hour * 24 * 7)
+		timeMin = &t
+
+	}
+	timeMinStr := converter.ParseToMsDateTime(*timeMin)
+	if timeMax == nil {
+		t := time.Now().Add(time.Hour * 24 * 100)
+		timeMax = &t
+	}
+	timeMaxStr := converter.ParseToMsDateTime(*timeMax)
+
 	tokenSource, err := ms.fetchTokenSource(ctx, oui)
 	if err != nil {
 		return entity.Calendar{}, fmt.Errorf("failed to fetch token source: %w", err)
@@ -228,28 +234,67 @@ func (ms *microsoftService) GetPrimaryCalendar(ctx context.Context, oui entity.O
 	}
 	client := ms.msCfg.Client(ctx, token)
 
-	resp, err := client.Get("https://graph.microsoft.com/v1.0/me")
+	var msUser types.MsUser
+	err = ms.fetch(ctx, client, "/me", http.StatusOK, &msUser)
+	if err != nil {
+		return entity.Calendar{}, fmt.Errorf("failed to fetch user: %w", err)
+	}
+
+	var msCalendarResponse types.MsCalendarResponse
+	err = ms.fetch(ctx, client, "/me/calendars", http.StatusOK, &msCalendarResponse)
 	if err != nil {
 		return entity.Calendar{}, fmt.Errorf("failed to fetch calendar: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return entity.Calendar{}, fmt.Errorf("received non-OK status code %d", resp.StatusCode)
+	i := slices.IndexFunc(msCalendarResponse.Value, func(c types.MsCalendar) bool {
+		return c.IsDefaultCalendar
+	})
+	if i == -1 {
+		return entity.Calendar{}, nil
 	}
+	msCalendar := msCalendarResponse.Value[i]
 
-	body, err := io.ReadAll(resp.Body)
+	var msCalendarEventsResponse types.MsCalendarEventsResponse
+
+	p := fmt.Sprintf("/me/calendars/%s/events?$count=true&$filter=start/dateTime ge '%s' and start/dateTime le '%s'&orderBy=start/datetime", msCalendar.Id, timeMinStr, timeMaxStr)
+	err = ms.fetch(ctx, client, encodePath(p), http.StatusOK, &msCalendarEventsResponse)
 	if err != nil {
-		return entity.Calendar{}, fmt.Errorf("failed to read response body: %w", err)
-	}
-	fmt.Printf("body: %+v\n", string(body))
-
-	var msUser msUserResponse
-	if err := json.Unmarshal(body, &msUser); err != nil {
-		return entity.Calendar{}, fmt.Errorf("failed to unmarshal response body: %w", err)
+		return entity.Calendar{}, fmt.Errorf("failed to fetch calendar: %w", err)
 	}
 
-	panic("unimplemented")
+	fmt.Println(msUser, msCalendarResponse, msCalendar, msCalendarEventsResponse.Value)
+	// fmt.Println(client)
+
+	calendar, err := converter.MsCalendarEventsToEntity(msCalendarEventsResponse.Value, msCalendar.Id, msCalendar.Name)
+	if err != nil {
+		return entity.Calendar{}, fmt.Errorf("failed to convert events to entity: %w", err)
+	}
+	return calendar, nil
+
+	// return entity.Calendar{}, fmt.Errorf("unimplemented")
+
+	// resp, err := client.Get("https://graph.microsoft.com/v1.0/me")
+	// if err != nil {
+	// 	return entity.Calendar{}, fmt.Errorf("failed to fetch calendar: %w", err)
+	// }
+	// defer resp.Body.Close()
+
+	// if resp.StatusCode != http.StatusOK {
+	// 	return entity.Calendar{}, fmt.Errorf("received non-OK status code %d", resp.StatusCode)
+	// }
+
+	// body, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return entity.Calendar{}, fmt.Errorf("failed to read response body: %w", err)
+	// }
+	// fmt.Printf("body: %+v\n", string(body))
+
+	// var msUser msUser
+	// if err := json.Unmarshal(body, &msUser); err != nil {
+	// 	return entity.Calendar{}, fmt.Errorf("failed to unmarshal response body: %w", err)
+	// }
+
+	// panic("unimplemented")
 
 }
 
@@ -280,4 +325,38 @@ func (ms microsoftService) fetchTokenSource(ctx context.Context, oui entity.Oaut
 		return nil, fmt.Errorf("failed to check and update repo token: %w", err)
 	}
 	return tokenSource, nil
+}
+
+func (ms microsoftService) fetch(ctx context.Context, client *http.Client, path string, expectStatus int, dst any) error {
+	resp, err := client.Get(fmt.Sprintf("https://graph.microsoft.com/v1.0%s", path))
+	if err != nil {
+		return fmt.Errorf("failed to fetch %s: %w", path, err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	fmt.Printf("body: %+v\n", string(body))
+	if resp.StatusCode != expectStatus {
+		return fmt.Errorf("received non-OK status code %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	if err := json.Unmarshal(body, dst); err != nil {
+		return fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
+	return nil
+}
+func encodePath(path string) string {
+	// URLをパース
+	u, err := url.Parse(path)
+	if err != nil {
+		return path // エラーの場合はオリジナルのパスを返す
+	}
+
+	// クエリ部分をエンコード
+	u.RawQuery = u.Query().Encode()
+
+	// エンコードされたパスを返す
+	return u.String()
 }

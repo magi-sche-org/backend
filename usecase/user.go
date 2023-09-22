@@ -28,15 +28,17 @@ type userUsecase struct {
 	er  repository.EventRepository
 	uv  validator.UserValidator
 	gs  service.OauthCalendarService
+	ms  service.OauthCalendarService
 }
 
-func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, er repository.EventRepository, uv validator.UserValidator, gs service.OauthCalendarService) UserUsecase {
+func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, er repository.EventRepository, uv validator.UserValidator, gs service.OauthCalendarService, ms service.OauthCalendarService) UserUsecase {
 	return &userUsecase{
 		ur:  ur,
 		oar: oar,
 		er:  er,
 		uv:  uv,
 		gs:  gs,
+		ms:  ms,
 	}
 }
 
@@ -126,6 +128,14 @@ func (uu *userUsecase) FetchExternalCalendars(ctx context.Context, user entity.U
 		// oui.Provider
 		if oui.Provider.Name == "google" {
 			calendar, err := uu.gs.GetPrimaryCalendar(ctx, oui, timeMin, timeMax)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get events: %w", err)
+			}
+			// fmt.Printf("events: %+v\n", events)
+			calendars = append(calendars, calendar)
+		}
+		if oui.Provider.Name == "microsoft" {
+			calendar, err := uu.ms.GetPrimaryCalendar(ctx, oui, timeMin, timeMax)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get events: %w", err)
 			}
