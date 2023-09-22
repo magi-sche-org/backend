@@ -137,7 +137,7 @@ func SendMail(id ulid.ULID, targetAddrs string) error {
 		"\n", "\r\n"))
 
 	// メール送信
-	err := smtp.SendMail(fmt.Sprintf("%s:%d", hostname, port), auth, from, recipients, msg)
+	err := smtp.SendMail(fmt.Sprintf("%s:%s", hostname, port), auth, from, recipients, msg)
 	if err != nil {
 		log.Fatal(err)
 	}
