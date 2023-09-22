@@ -32,6 +32,7 @@ type MySQL struct {
 }
 type OAuth struct {
 	Google           Client `envPrefix:"GOOGLE_"`
+	Microsoft        Client `envPrefix:"MICROSOFT_"`
 	DefaultReturnURL string `env:"DEFAULT_RETURN_URL" envDefault:"http://localhost:3000"`
 }
 type Client struct {

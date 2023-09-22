@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/entity"
+	"github.com/geekcamp-vol11-team30/backend/service/internal/types"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 )
@@ -59,7 +60,7 @@ func parseGoogleAllDayEventToEntity(event *calendar.Event) (entity.CalendarEvent
 		StartDate:   &entity.Date{Time: startDate},
 		EndDate:     &entity.Date{Time: endDate},
 		IsAllDay:    true,
-		URL:         url,
+		URL:         &url,
 		DisplayOnly: displayOnly,
 	}, nil
 }
@@ -81,7 +82,50 @@ func parseGoogleNormalEventToEntity(event *calendar.Event) (entity.CalendarEvent
 		StartTime:   &start,
 		EndTime:     &end,
 		IsAllDay:    false,
-		URL:         url,
+		URL:         &url,
 		DisplayOnly: displayOnly,
 	}, nil
+}
+
+func MsCalendarEventsToEntity(events []types.MsCalendarEvent, calendarID string, calendarName string) (entity.Calendar, error) {
+	ce := make([]entity.CalendarEvent, len(events))
+	for i, e := range events {
+		event, err := parseMicrosoftEventToEntity(e)
+		if err != nil {
+			return entity.Calendar{}, fmt.Errorf("failed to convert CalendarEvent to entity on CalendarEventsToEntity: %w", err)
+		}
+		ce[i] = event
+	}
+
+	return entity.Calendar{
+		Events:       ce,
+		Provider:     "microsoft",
+		CalendarName: calendarName,
+		CalendarID:   calendarID,
+		Count:        len(events),
+	}, nil
+}
+
+func parseMicrosoftEventToEntity(event types.MsCalendarEvent) (entity.CalendarEvent, error) {
+	layout := "2006-01-02T15:04:05.0000000"
+	start, err := time.Parse(layout, event.Start.DateTime)
+	if err != nil {
+		return entity.CalendarEvent{}, fmt.Errorf("failed to parse time: %w", err)
+	}
+	end, err := time.Parse(layout, event.End.DateTime)
+	if err != nil {
+		return entity.CalendarEvent{}, fmt.Errorf("failed to parse time: %w", err)
+	}
+	return entity.CalendarEvent{
+		Name:        event.Subject,
+		StartTime:   &start,
+		EndTime:     &end,
+		IsAllDay:    false,
+		URL:         nil,
+		DisplayOnly: false,
+	}, nil
+}
+
+func ParseToMsDateTime(parse time.Time) string {
+	return parse.Format("2006-01-02T15:04:05.0000000")
 }

@@ -8,62 +8,69 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/repository"
 	"github.com/geekcamp-vol11-team30/backend/service"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 type OauthUsecase interface {
-	GetGoogleAuthURL(ctx context.Context) (string, string, error)
-	LoginGoogleWithCode(ctx context.Context, user *entity.User, code string) (entity.User, error)
+	GetAuthURL(ctx context.Context, provider string) (string, string, error)
+	LoginWithCode(ctx context.Context, provider string, user *entity.User, code string) (entity.User, error)
 }
 
 type oauthUsecase struct {
-	cfg       *config.Config
-	googleCfg *oauth2.Config
-	oar       repository.OauthRepository
-	ur        repository.UserRepository
-	uu        UserUsecase
-	gs        service.GoogleService
+	cfg *config.Config
+	oar repository.OauthRepository
+	ur  repository.UserRepository
+	uu  UserUsecase
+	gs  service.OauthCalendarService
+	ms  service.OauthCalendarService
 }
 
-func NewOauthUsecase(cfg *config.Config, oar repository.OauthRepository, ur repository.UserRepository, gs service.GoogleService, uu UserUsecase) OauthUsecase {
-	gcfg := &oauth2.Config{
-		ClientID:     cfg.OAuth.Google.ClientID,
-		ClientSecret: cfg.OAuth.Google.ClientSecret,
-		Endpoint:     google.Endpoint,
-		RedirectURL:  fmt.Sprintf("%s/oauth2/google/callback", cfg.BaseURL), // "http://localhost:8080/oauth2/google/callback",
-		Scopes: []string{
-			"openid",
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
-			"https://www.googleapis.com/auth/calendar.readonly",
-		},
-	}
-	// fmt.Printf("gcfguc: %+v\n", gcfg)
+func NewOauthUsecase(cfg *config.Config, oar repository.OauthRepository, ur repository.UserRepository, gs service.OauthCalendarService, ms service.OauthCalendarService, uu UserUsecase) OauthUsecase {
 	return &oauthUsecase{
-		cfg:       cfg,
-		googleCfg: gcfg,
-		oar:       oar,
-		ur:        ur,
-		uu:        uu,
-		gs:        gs,
+		cfg: cfg,
+		oar: oar,
+		ur:  ur,
+		uu:  uu,
+		gs:  gs,
+		ms:  ms,
 	}
 }
 
-// GetGoogleAuthURL implements OauthUsecase.
-func (oau *oauthUsecase) GetGoogleAuthURL(ctx context.Context) (url string, state string, err error) {
-	url, state, err = oau.gs.GetGoogleAuthURL(ctx)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to get google auth url: %w", err)
+// GetAuthURL implements OauthUsecase.
+func (oau *oauthUsecase) GetAuthURL(ctx context.Context, provider string) (url string, state string, err error) {
+	if provider == "google" {
+		url, state, err = oau.gs.GetAuthURL(ctx)
+
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get google auth url: %w", err)
+		}
+		return url, state, nil
+	} else if provider == "microsoft" {
+		url, state, err = oau.ms.GetAuthURL(ctx)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to get microsoft auth url: %w", err)
+		}
+		return url, state, nil
 	}
-	return url, state, nil
+
+	return "", "", fmt.Errorf("provider not found")
+
 }
 
-// LoginGoogleWithCode implements OauthUsecase.
-func (oau *oauthUsecase) LoginGoogleWithCode(ctx context.Context, user *entity.User, code string) (entity.User, error) {
-	user, err := oau.gs.GetOrCreateUserByCode(ctx, code, user)
-	if err != nil {
-		return entity.User{}, fmt.Errorf("failed to login google with code: %w", err)
+// LoginWithCode implements OauthUsecase.
+func (oau *oauthUsecase) LoginWithCode(ctx context.Context, provider string, user *entity.User, code string) (entity.User, error) {
+	if provider == "google" {
+		user, err := oau.gs.GetOrCreateUserByCode(ctx, code, user)
+		if err != nil {
+			return entity.User{}, fmt.Errorf("failed to login google with code: %w", err)
+		}
+		return *user, nil
+	} else if provider == "microsoft" {
+		user, err := oau.ms.GetOrCreateUserByCode(ctx, code, user)
+		if err != nil {
+			return entity.User{}, fmt.Errorf("failed to login microsoft with code: %w", err)
+		}
+		return *user, nil
 	}
-	return *user, nil
+	return entity.User{}, fmt.Errorf("provider not found")
+
 }
