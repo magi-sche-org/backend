@@ -18,6 +18,7 @@ type Config struct {
 	OAuth                OAuth  `envPrefix:"OAUTH_"`
 	CORS                 CORS   `envPrefix:"CORS_"`
 	CSRF                 CSRF   `envPrefix:"CSRF_"`
+	SMTP                 SMTP   `envPrefix:"SMTP_"`
 }
 
 type MySQL struct {
@@ -45,6 +46,13 @@ type CSRF struct {
 	Domain   string   `env:"DOMAIN" envDefault:"localhost"`
 	HttpOnly bool     `env:"HTTP_ONLY" envDefault:"false"`
 	SameSite SameSite `env:"SAME_SITE" envDefault:"Lax"`
+}
+
+type SMTP struct {
+	Host     string `env:"HOST" envDefault:"smtp.gmail.com"`
+	ID       string `env:"ID" envDefault:"magische@gmail.com"`
+	Port     int    `env:"PORT" envDefault:"587"`
+	Password string `env:"PASSWORD" envDefault:"passwd"`
 }
 
 const (

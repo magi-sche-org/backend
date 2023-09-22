@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/smtp"
-	"os"
 	"strings"
 	"time"
 
@@ -120,16 +119,15 @@ func MakeRandomStr(digit int) (string, error) {
 	return result, nil
 }
 
-func SendMail(id ulid.ULID, targetAddrs string) error {
-	hostname := os.Getenv("SMTP_MAIL") // SMTPサーバーのホスト名
-	port := os.Getenv("SMTP_PORT")     // SMTPサーバーのポート番号
-	password := os.Getenv("SMTP_PASSWORD")
+func SendMail(targetAddrs string, title string, body string) error {
+	var cfg config.Config
 
-	from := "magische@gmail.com"        // 送信元のメールアドレス
+	hostname := cfg.SMTP.Host // SMTPサーバーのホスト名
+	port := cfg.SMTP.Port     // SMTPサーバーのポート番号
+	password := cfg.SMTP.Password
+	from := cfg.SMTP.ID
+
 	recipients := []string{targetAddrs} // 送信先のメールアドレス
-	title := "magische 全員回答完了のお知らせ"     // メールのタイトル
-	body := ("全員が回答しました！\n" +
-		"確認してください！\n") // メールの本文
 
 	auth := smtp.PlainAuth("", targetAddrs, password, hostname)
 	msg := []byte(strings.ReplaceAll(fmt.Sprintf(
