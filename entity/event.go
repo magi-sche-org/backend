@@ -7,22 +7,31 @@ import (
 )
 
 type Event struct {
-	ID            ulid.ULID         `json:"id"`
-	OwnerID       ulid.ULID         `json:"ownerId"`
-	Name          string            `json:"name"`
-	Description   string            `json:"description"`
-	DurationAbout string            `json:"durationAbout"`
-	UnitSeconds   int               `json:"unitSeconds"`
-	Units         []EventTimeUnit   `json:"units"`
-	UserAnswers   []UserEventAnswer `json:"userAnswers"`
+	ID                   ulid.ULID         `json:"id"`
+	OwnerID              ulid.ULID         `json:"ownerId"`
+	Name                 string            `json:"name"`
+	Description          string            `json:"description"`
+	DurationAbout        string            `json:"durationAbout"`
+	UnitSeconds          int               `json:"unitSeconds"`
+	Units                []EventTimeUnit   `json:"units"`
+	UserAnswers          []UserEventAnswer `json:"userAnswers"`
+	UserAnswersCount     int               `json:"userAnswersCount"`
+	NotifyByEmail        bool              `json:"notifyByEmail"`
+	NumberOfParticipants int               `json:"numberOfParticipants"`
+	ConfirmationEmail    string            `json:"confirmationEmail"`
 }
+
 type EventRequest struct {
-	Name          string                 `json:"name"`
-	Description   string                 `json:"description"`
-	DurationAbout string                 `json:"durationAbout"`
-	UnitSeconds   int                    `json:"unitDuration"`
-	Units         []EventTimeUnitRequest `json:"units"`
+	Name                 string                 `json:"name"`
+	Description          string                 `json:"description"`
+	DurationAbout        string                 `json:"durationAbout"`
+	UnitSeconds          int                    `json:"unitDuration"`
+	Units                []EventTimeUnitRequest `json:"units"`
+	NotifyByEmail        bool                   `json:"notifyByEmail"`
+	NumberOfParticipants int                    `json:"numberOfParticipants"`
+	ConfirmationEmail    string                 `json:"confirmationEmail"`
 }
+
 type EventResponse struct {
 	ID            string                    `json:"id"`
 	OwnerID       string                    `json:"ownerId"`
@@ -47,4 +56,20 @@ type EventTimeUnitResponse struct {
 	ID       string    `json:"id"`
 	StartsAt time.Time `json:"startsAt"`
 	EndsAt   time.Time `json:"endsAt"`
+}
+
+type Confirm struct {
+	ID                   ulid.ULID `json:"id"`
+	EventID              ulid.ULID `json:"-"`
+	NotifyByEmail        bool      `json:"notifyByEmail"`
+	NumberOfParticipants int       `json:"numberOfParticipants"`
+	ConfirmationEmail    string    `json:"confirmationEmail"`
+}
+
+type EventNotifyReservation struct {
+	ID                   ulid.ULID `json:"id"`
+	EventID              ulid.ULID `json:"-"`
+	NotifyByEmail        bool      `json:"notifyByEmail"`
+	NumberOfParticipants int       `json:"numberOfParticipants"`
+	ConfirmationEmail    string    `json:"confirmationEmail"`
 }

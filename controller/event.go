@@ -120,7 +120,14 @@ func (ec *eventController) CreateAnswer(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if event.UserAnswersCount == event.NumberOfParticipants {
+		if err := util.SendMail(event.ID, event.ConfirmationEmail); err != nil {
+			return apperror.NewUnknownError(fmt.Errorf("failed to send confirmation email: %w", err), nil)
+		}
+	}
 	eventRes := eventToEventResponse(event, user)
+
 	i := slices.IndexFunc(eventRes.UserAnswers, func(answer entity.UserEventAnswerResponse) bool {
 		return answer.IsYourAnswer
 	})
@@ -146,6 +153,7 @@ func (ec *eventController) RetrieveUserAnswer(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
 	eventRes := eventToEventResponse(event, user)
 	i := slices.IndexFunc(eventRes.UserAnswers, func(answer entity.UserEventAnswerResponse) bool {
 		return answer.IsYourAnswer
