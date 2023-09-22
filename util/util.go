@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"net/http"
 	"net/smtp"
 	"strings"
@@ -125,7 +124,7 @@ func SendMail(targetAddrs string, title string, body string) error {
 	hostname := cfg.SMTP.Host // SMTPサーバーのホスト名
 	port := cfg.SMTP.Port     // SMTPサーバーのポート番号
 	password := cfg.SMTP.Password
-	from := cfg.SMTP.ID
+	from := cfg.SMTP.Email // 送信者のメールアドレス
 
 	recipients := []string{targetAddrs} // 送信先のメールアドレス
 	auth := smtp.PlainAuth("", targetAddrs, password, hostname)
@@ -137,7 +136,7 @@ func SendMail(targetAddrs string, title string, body string) error {
 	err := smtp.SendMail(fmt.Sprintf("%s:%d", hostname, port), auth, from, recipients, msg)
 
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to send email: %w", err)
 	}
 	return nil
 
