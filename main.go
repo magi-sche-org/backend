@@ -49,7 +49,7 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	oar := repository.NewOauthRepository(db)
 	gs := service.NewGoogleService(cfg, oar, ur)
 	uv := validator.NewUserValidator()
-	uu := usecase.NewUserUsecase(ur, oar, uv, gs)
+	uu := usecase.NewUserUsecase(ur, oar, er, uv, gs)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
 	eu := usecase.NewEventUsecase(er)
 	oau := usecase.NewOauthUsecase(cfg, oar, ur, gs, uu)

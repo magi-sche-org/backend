@@ -18,6 +18,7 @@ type UserController interface {
 	// GetEvents(c echo.Context) error
 	Get(c echo.Context) error
 	GetExternalCalendars(c echo.Context) error
+	GetEvents(c echo.Context) error
 }
 
 type userController struct {
@@ -87,4 +88,38 @@ func (uc *userController) GetExternalCalendars(c echo.Context) error {
 	}
 
 	return util.JSONResponse(c, http.StatusOK, events)
+}
+
+// GetEvents implements UserController.
+func (uc *userController) GetEvents(c echo.Context) error {
+	ctx := c.Request().Context()
+	user, err := appcontext.Extract(ctx).GetUser()
+	if err != nil {
+		return err
+	}
+
+	events, err := uc.uu.ListEvents(ctx, user)
+	if err != nil {
+		return apperror.NewInternalError(err, "failed to fetch external calendars", "failed to fetch external calendars")
+	}
+
+	eventsRes := make([]UserEvent, len(events))
+	for i, event := range events {
+		eventsRes[i] = UserEvent{
+			ID:            util.ULIDToString(event.ID),
+			Name:          event.Name,
+			Description:   event.Description,
+			DurationAbout: event.DurationAbout,
+			UnitSeconds:   event.UnitSeconds,
+		}
+	}
+	return util.JSONResponse(c, http.StatusOK, eventsRes)
+}
+
+type UserEvent struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	DurationAbout string `json:"durationAbout"`
+	UnitSeconds   int    `json:"unitDuration"`
 }
