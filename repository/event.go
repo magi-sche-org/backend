@@ -30,12 +30,12 @@ type EventRepository interface {
 	FetchEventAnswersWithUnits(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) ([]entity.UserEventAnswer, error)
 	// イベントの指定ユーザー回答(Unit無し)を取得する
 	FetchEventAnswer(ctx context.Context, tx *sql.Tx, eventId ulid.ULID, userId ulid.ULID) (entity.UserEventAnswer, error)
-
+	// 回答したユーザーの数を取得する
+	FetchUserAnswerCount(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) (int, error)
 	// イベント参加回答更新
 	UpdateEventAnswer(ctx context.Context, tx *sql.Tx, answer entity.UserEventAnswer) (entity.UserEventAnswer, error)
 	// イベント参加回答時間単位を登録する
 	RegisterAnswerUnits(ctx context.Context, tx *sql.Tx, answer []entity.UserEventAnswerUnit) ([]entity.UserEventAnswerUnit, error)
-
 	// // イベントとイベント単位を取得する
 	// FetchEventAndUnits(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) (entity.Event, error)
 	// // イベントの全情報を取得する
@@ -164,6 +164,7 @@ func (er *eventRepository) FetchEventTimeUnits(ctx context.Context, tx *sql.Tx, 
 	return etus, nil
 }
 
+// イベントの全ユーザー回答(Unit付き)を取得する
 // FetchEventAnswersWithUnits implements EventRepository.
 func (er *eventRepository) FetchEventAnswersWithUnits(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) ([]entity.UserEventAnswer, error) {
 	// panic("unimplemented")
@@ -257,6 +258,22 @@ func (er *eventRepository) FetchEventAnswer(ctx context.Context, tx *sql.Tx, eve
 		Units:        units,
 		// Units:        []entity.UserEventAnswerUnit{},
 	}, nil
+}
+
+// FetchUserAnswerCount implements EventRepository.
+func (er *eventRepository) FetchUserAnswerCount(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) (int, error) {
+	var exc boil.ContextExecutor = tx
+	if tx == nil {
+		exc = er.db
+	}
+
+	count, err := models.UserEventAnswers(
+		models.UserEventAnswerWhere.EventID.EQ(util.ULIDToString(eventId)),
+	).Count(ctx, exc)
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }
 
 // UpdateEventAnswer implements EventRepository.
