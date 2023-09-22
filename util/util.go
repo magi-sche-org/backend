@@ -3,7 +3,9 @@ package util
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
 	"net/http"
+	"net/smtp"
 	"strings"
 	"time"
 
@@ -114,4 +116,28 @@ func MakeRandomStr(digit int) (string, error) {
 		result += string(letters[int(v)%len(letters)])
 	}
 	return result, nil
+}
+
+func SendMail(targetAddrs string, title string, body string) error {
+	var cfg config.Config
+
+	hostname := cfg.SMTP.Host // SMTPサーバーのホスト名
+	port := cfg.SMTP.Port     // SMTPサーバーのポート番号
+	password := cfg.SMTP.Password
+	from := cfg.SMTP.Email // 送信者のメールアドレス
+
+	recipients := []string{targetAddrs} // 送信先のメールアドレス
+	auth := smtp.PlainAuth("", targetAddrs, password, hostname)
+
+	msg := []byte(strings.ReplaceAll(fmt.Sprintf(
+		"To: %s\nSubject: %s\n\n%s", strings.Join(recipients, ","), title, body),
+		"\n", "\r\n"))
+	// メール送信
+	err := smtp.SendMail(fmt.Sprintf("%s:%d", hostname, port), auth, from, recipients, msg)
+
+	if err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+	return nil
+
 }
