@@ -21,20 +21,13 @@ const idPrimary = "primary"
 const maxFetchEvents = 5000
 const onceFetchEvents = 1000
 
-type GoogleService interface {
-	GetGoogleAuthURL(ctx context.Context) (url string, state string, err error)
-	ExchangeToken(ctx context.Context, code string) (*oauth2.Token, error)
-	GetOrCreateUserByCode(ctx context.Context, code string, user *entity.User) (*entity.User, error)
-	GetPrimaryCalendar(ctx context.Context, oui entity.OauthUserInfo, timeMin *time.Time, timeMax *time.Time) (entity.Calendar, error)
-}
-
 type googleService struct {
 	googleCfg *oauth2.Config
 	oar       repository.OauthRepository
 	ur        repository.UserRepository
 }
 
-func NewGoogleService(cfg *config.Config, oar repository.OauthRepository, ur repository.UserRepository) GoogleService {
+func NewGoogleService(cfg *config.Config, oar repository.OauthRepository, ur repository.UserRepository) OauthCalendarService {
 
 	p, err := oar.RegisterProvider(context.Background(), entity.OauthProvider{
 		Name:         "google",
@@ -64,8 +57,8 @@ func NewGoogleService(cfg *config.Config, oar repository.OauthRepository, ur rep
 	}
 }
 
-// GetGoogleAuthURL implements GoogleService.
-func (gs *googleService) GetGoogleAuthURL(ctx context.Context) (url string, state string, err error) {
+// GetAuthURL implements GoogleService.
+func (gs *googleService) GetAuthURL(ctx context.Context) (url string, state string, err error) {
 	state, err = util.MakeRandomStr(32)
 	if err != nil {
 		return "", "", err

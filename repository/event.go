@@ -44,6 +44,9 @@ type EventRepository interface {
 	// FetchEventAllDataByID(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) (entity.Event, error)
 	// // イベント参加可否を登録する
 	// RegisterAnswerWithUnits(ctx context.Context, tx *sql.Tx, answer entity.UserEventAnswer) (entity.UserEventAnswer, error)
+
+	// ユーザーと関連するイベント一覧取得
+	FetchUserEvents(ctx context.Context, tx *sql.Tx, userId ulid.ULID) ([]entity.Event, error)
 }
 
 type eventRepository struct {
@@ -345,6 +348,56 @@ func (er *eventRepository) RegisterAnswerUnits(ctx context.Context, tx *sql.Tx, 
 		return []entity.UserEventAnswerUnit{}, err
 	}
 	return units, nil
+}
+
+// FetchUserEvents implements EventRepository.
+func (er *eventRepository) FetchUserEvents(ctx context.Context, tx *sql.Tx, userId ulid.ULID) ([]entity.Event, error) {
+	var exc boil.ContextExecutor = tx
+	if tx == nil {
+		exc = er.db
+	}
+
+	userIdStr := util.ULIDToString(userId)
+
+	answersM, err := models.UserEventAnswers(
+		models.UserEventAnswerWhere.UserID.EQ(userIdStr),
+	).All(ctx, exc)
+	if err != nil && err != sql.ErrNoRows {
+		return []entity.Event{}, fmt.Errorf("error on fetch user event answers: %w", err)
+	}
+	eventIds := make([]string, len(answersM))
+	for i, answerM := range answersM {
+		eventIds[i] = answerM.EventID
+	}
+
+	// slices.
+	eventsM, err := models.Events(
+		models.EventWhere.OwnerID.EQ(userIdStr),
+		qm.Or2(
+			models.EventWhere.ID.IN(eventIds),
+		),
+		// qm.Load(
+		// 	models.UserEventAnswerRels.UserEventAnswerUnits,
+		// 	// join EventTimeUnit
+		// ),
+		qm.OrderBy("-created_at"),
+	).All(ctx, exc)
+	if err != nil && err != sql.ErrNoRows {
+		return []entity.Event{}, fmt.Errorf("error on fetch events: %w", err)
+	}
+
+	events := make([]entity.Event, len(eventsM))
+	for i, eventM := range eventsM {
+		e, err := converter.EventModelToEntity(ctx, eventM, nil, nil)
+		if err != nil {
+			return []entity.Event{}, fmt.Errorf("failed to convert EventModel to entity on FetchEvent: %w", err)
+		}
+		events[i] = e
+	}
+	return events, nil
+
+	// fmt.Println(exc)
+	// panic("unimplemented")
 }
 
 // // RegisterAnswerWithUnits implements EventRepository.

@@ -39,7 +39,7 @@ func NewRouter(
 	eug := e.Group("/user")
 	eug.Use(am.SessionHandler)
 	eug.GET("", uc.Get)
-	// eug.GET("/events", uc.GetEvents)
+	eug.GET("/events", uc.GetEvents)
 	eug.GET("/external/calendars", uc.GetExternalCalendars)
 
 	// // ユーザー登録
@@ -52,8 +52,8 @@ func NewRouter(
 	// Oauth関連
 	og := e.Group("/oauth2")
 	// og.Use(am.IfLoginSessionHandler)
-	og.GET("/google", oc.RedirectToAuthPage, am.IfLoginSessionHandler)
-	og.GET("/google/callback", oc.Callback, am.SessionHandler)
+	og.GET("/:provider", oc.RedirectToAuthPage, am.IfLoginSessionHandler)
+	og.GET("/:provider/callback", oc.Callback, am.SessionHandler)
 
 	// イベント関連
 	eg := e.Group("/events")

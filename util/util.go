@@ -118,16 +118,16 @@ func MakeRandomStr(digit int) (string, error) {
 	return result, nil
 }
 
-func SendMail(targetAddrs string, title string, body string) error {
-	var cfg config.Config
-
+func SendMail(cfg config.Config, targetAddrs string, title string, body string) error {
 	hostname := cfg.SMTP.Host // SMTPサーバーのホスト名
 	port := cfg.SMTP.Port     // SMTPサーバーのポート番号
 	password := cfg.SMTP.Password
 	from := cfg.SMTP.Email // 送信者のメールアドレス
+	username := cfg.SMTP.User
 
 	recipients := []string{targetAddrs} // 送信先のメールアドレス
-	auth := smtp.PlainAuth("", targetAddrs, password, hostname)
+	// auth := smtp.PlainAuth("", username, password, hostname)
+	auth := smtp.PlainAuth("", username, password, hostname)
 
 	msg := []byte(strings.ReplaceAll(fmt.Sprintf(
 		"To: %s\nSubject: %s\n\n%s", strings.Join(recipients, ","), title, body),

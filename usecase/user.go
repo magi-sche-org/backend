@@ -19,21 +19,26 @@ type UserUsecase interface {
 	RetrieveUserProviders(ctx context.Context, user entity.User) ([]entity.OauthProvider, []entity.OauthUserInfo, error)
 	// Register(ctx context.Context, user entity.User) ([]entity.CalendarEvent, error)
 	FetchExternalCalendars(ctx context.Context, user entity.User, timeMin *time.Time, timeMax *time.Time) ([]entity.Calendar, error)
+	ListEvents(ctx context.Context, user entity.User) ([]entity.Event, error)
 }
 
 type userUsecase struct {
 	ur  repository.UserRepository
 	oar repository.OauthRepository
+	er  repository.EventRepository
 	uv  validator.UserValidator
-	gs  service.GoogleService
+	gs  service.OauthCalendarService
+	ms  service.OauthCalendarService
 }
 
-func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, uv validator.UserValidator, gs service.GoogleService) UserUsecase {
+func NewUserUsecase(ur repository.UserRepository, oar repository.OauthRepository, er repository.EventRepository, uv validator.UserValidator, gs service.OauthCalendarService, ms service.OauthCalendarService) UserUsecase {
 	return &userUsecase{
 		ur:  ur,
 		oar: oar,
+		er:  er,
 		uv:  uv,
 		gs:  gs,
+		ms:  ms,
 	}
 }
 
@@ -129,7 +134,24 @@ func (uu *userUsecase) FetchExternalCalendars(ctx context.Context, user entity.U
 			// fmt.Printf("events: %+v\n", events)
 			calendars = append(calendars, calendar)
 		}
+		if oui.Provider.Name == "microsoft" {
+			calendar, err := uu.ms.GetPrimaryCalendar(ctx, oui, timeMin, timeMax)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get events: %w", err)
+			}
+			// fmt.Printf("events: %+v\n", events)
+			calendars = append(calendars, calendar)
+		}
 	}
 
 	return calendars, nil
+}
+
+// ListEvents implements UserUsecase.
+func (uu *userUsecase) ListEvents(ctx context.Context, user entity.User) ([]entity.Event, error) {
+	events, err := uu.er.FetchUserEvents(ctx, nil, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch events: %w", err)
+	}
+	return events, nil
 }
