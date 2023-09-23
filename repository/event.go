@@ -28,6 +28,8 @@ type EventRepository interface {
 	FetchEventTimeUnits(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) ([]entity.EventTimeUnit, error)
 	// イベントの全ユーザー回答(Unit付き)を取得する
 	FetchEventAnswersWithUnits(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) ([]entity.UserEventAnswer, error)
+	// 回答したユーザーの数を取得する
+	FetchUserAnswerCount(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) (int, error)
 	// イベントの指定ユーザー回答(Unit無し)を取得する
 	FetchEventAnswer(ctx context.Context, tx *sql.Tx, eventId ulid.ULID, userId ulid.ULID) (entity.UserEventAnswer, error)
 
@@ -66,12 +68,15 @@ func (er *eventRepository) CreateEvent(ctx context.Context, tx *sql.Tx, event en
 
 	id := util.GenerateULID(ctx)
 	e := &models.Event{
-		ID:            util.ULIDToString(id),
-		OwnerID:       util.ULIDToString(event.OwnerID),
-		Name:          event.Name,
-		Description:   event.Description,
-		DurationAbout: event.DurationAbout,
-		UnitSeconds:   uint64(event.UnitSeconds),
+		ID:                         util.ULIDToString(id),
+		OwnerID:                    util.ULIDToString(event.OwnerID),
+		Name:                       event.Name,
+		Description:                event.Description,
+		DurationAbout:              event.DurationAbout,
+		UnitSeconds:                uint64(event.UnitSeconds),
+		EnablesEmailNotification:   event.NotifyByEmail,
+		ExpectedParticipantsNumber: event.NumberOfParticipants,
+		NotificationEmail:          event.ConfirmationEmail,
 	}
 	err := e.Insert(ctx, exc, boil.Infer())
 	if err != nil {
@@ -260,6 +265,22 @@ func (er *eventRepository) FetchEventAnswer(ctx context.Context, tx *sql.Tx, eve
 		Units:        units,
 		// Units:        []entity.UserEventAnswerUnit{},
 	}, nil
+}
+
+// FetchUserAnswerCount implements EventRepository.
+func (er *eventRepository) FetchUserAnswerCount(ctx context.Context, tx *sql.Tx, eventId ulid.ULID) (int, error) {
+	var exc boil.ContextExecutor = tx
+	if tx == nil {
+		exc = er.db
+	}
+
+	count, err := models.UserEventAnswers(
+		models.UserEventAnswerWhere.EventID.EQ(util.ULIDToString(eventId)),
+	).Count(ctx, exc)
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }
 
 // UpdateEventAnswer implements EventRepository.

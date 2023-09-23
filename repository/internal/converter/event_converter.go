@@ -19,13 +19,16 @@ func EventModelToEntity(ctx context.Context, em *models.Event, units []entity.Ev
 		return entity.Event{}, fmt.Errorf("failed to parse ULID(%s): %w", em.OwnerID, err)
 	}
 	return entity.Event{
-		ID:            id,
-		OwnerID:       ownerId,
-		Name:          em.Name,
-		Description:   em.Description,
-		DurationAbout: em.DurationAbout,
-		UnitSeconds:   int(em.UnitSeconds),
-		Units:         units,
-		UserAnswers:   userAnswers,
+		ID:                   id,
+		OwnerID:              ownerId,
+		Name:                 em.Name,
+		Description:          em.Description,
+		DurationAbout:        em.DurationAbout,
+		UnitSeconds:          int(em.UnitSeconds),
+		Units:                units,
+		UserAnswers:          userAnswers,
+		NotifyByEmail:        em.EnablesEmailNotification,
+		NumberOfParticipants: em.ExpectedParticipantsNumber,
+		ConfirmationEmail:    em.NotificationEmail,
 	}, nil
 }

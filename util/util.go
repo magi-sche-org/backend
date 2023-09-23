@@ -119,6 +119,7 @@ func MakeRandomStr(digit int) (string, error) {
 }
 
 func SendMail(cfg config.Config, targetAddrs string, title string, body string) error {
+	fmt.Println("send email called!!!!!!", targetAddrs, title, body)
 	hostname := cfg.SMTP.Host // SMTPサーバーのホスト名
 	port := cfg.SMTP.Port     // SMTPサーバーのポート番号
 	password := cfg.SMTP.Password

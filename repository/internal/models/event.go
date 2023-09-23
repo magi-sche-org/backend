@@ -23,57 +23,72 @@ import (
 
 // Event is an object representing the database table.
 type Event struct {
-	ID            string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	OwnerID       string    `boil:"owner_id" json:"owner_id" toml:"owner_id" yaml:"owner_id"`
-	Name          string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description   string    `boil:"description" json:"description" toml:"description" yaml:"description"`
-	DurationAbout string    `boil:"duration_about" json:"duration_about" toml:"duration_about" yaml:"duration_about"`
-	UnitSeconds   uint64    `boil:"unit_seconds" json:"unit_seconds" toml:"unit_seconds" yaml:"unit_seconds"`
-	CreatedAt     time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID                         string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	OwnerID                    string    `boil:"owner_id" json:"owner_id" toml:"owner_id" yaml:"owner_id"`
+	Name                       string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description                string    `boil:"description" json:"description" toml:"description" yaml:"description"`
+	DurationAbout              string    `boil:"duration_about" json:"duration_about" toml:"duration_about" yaml:"duration_about"`
+	UnitSeconds                uint64    `boil:"unit_seconds" json:"unit_seconds" toml:"unit_seconds" yaml:"unit_seconds"`
+	CreatedAt                  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt                  time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	EnablesEmailNotification   bool      `boil:"enables_email_notification" json:"enables_email_notification" toml:"enables_email_notification" yaml:"enables_email_notification"`
+	ExpectedParticipantsNumber int       `boil:"expected_participants_number" json:"expected_participants_number" toml:"expected_participants_number" yaml:"expected_participants_number"`
+	NotificationEmail          string    `boil:"notification_email" json:"notification_email" toml:"notification_email" yaml:"notification_email"`
 
 	R *eventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L eventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var EventColumns = struct {
-	ID            string
-	OwnerID       string
-	Name          string
-	Description   string
-	DurationAbout string
-	UnitSeconds   string
-	CreatedAt     string
-	UpdatedAt     string
+	ID                         string
+	OwnerID                    string
+	Name                       string
+	Description                string
+	DurationAbout              string
+	UnitSeconds                string
+	CreatedAt                  string
+	UpdatedAt                  string
+	EnablesEmailNotification   string
+	ExpectedParticipantsNumber string
+	NotificationEmail          string
 }{
-	ID:            "id",
-	OwnerID:       "owner_id",
-	Name:          "name",
-	Description:   "description",
-	DurationAbout: "duration_about",
-	UnitSeconds:   "unit_seconds",
-	CreatedAt:     "created_at",
-	UpdatedAt:     "updated_at",
+	ID:                         "id",
+	OwnerID:                    "owner_id",
+	Name:                       "name",
+	Description:                "description",
+	DurationAbout:              "duration_about",
+	UnitSeconds:                "unit_seconds",
+	CreatedAt:                  "created_at",
+	UpdatedAt:                  "updated_at",
+	EnablesEmailNotification:   "enables_email_notification",
+	ExpectedParticipantsNumber: "expected_participants_number",
+	NotificationEmail:          "notification_email",
 }
 
 var EventTableColumns = struct {
-	ID            string
-	OwnerID       string
-	Name          string
-	Description   string
-	DurationAbout string
-	UnitSeconds   string
-	CreatedAt     string
-	UpdatedAt     string
+	ID                         string
+	OwnerID                    string
+	Name                       string
+	Description                string
+	DurationAbout              string
+	UnitSeconds                string
+	CreatedAt                  string
+	UpdatedAt                  string
+	EnablesEmailNotification   string
+	ExpectedParticipantsNumber string
+	NotificationEmail          string
 }{
-	ID:            "event.id",
-	OwnerID:       "event.owner_id",
-	Name:          "event.name",
-	Description:   "event.description",
-	DurationAbout: "event.duration_about",
-	UnitSeconds:   "event.unit_seconds",
-	CreatedAt:     "event.created_at",
-	UpdatedAt:     "event.updated_at",
+	ID:                         "event.id",
+	OwnerID:                    "event.owner_id",
+	Name:                       "event.name",
+	Description:                "event.description",
+	DurationAbout:              "event.duration_about",
+	UnitSeconds:                "event.unit_seconds",
+	CreatedAt:                  "event.created_at",
+	UpdatedAt:                  "event.updated_at",
+	EnablesEmailNotification:   "event.enables_email_notification",
+	ExpectedParticipantsNumber: "event.expected_participants_number",
+	NotificationEmail:          "event.notification_email",
 }
 
 // Generated where
@@ -147,24 +162,62 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint) IN(slice []int) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelperint) NIN(slice []int) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
 var EventWhere = struct {
-	ID            whereHelperstring
-	OwnerID       whereHelperstring
-	Name          whereHelperstring
-	Description   whereHelperstring
-	DurationAbout whereHelperstring
-	UnitSeconds   whereHelperuint64
-	CreatedAt     whereHelpertime_Time
-	UpdatedAt     whereHelpertime_Time
+	ID                         whereHelperstring
+	OwnerID                    whereHelperstring
+	Name                       whereHelperstring
+	Description                whereHelperstring
+	DurationAbout              whereHelperstring
+	UnitSeconds                whereHelperuint64
+	CreatedAt                  whereHelpertime_Time
+	UpdatedAt                  whereHelpertime_Time
+	EnablesEmailNotification   whereHelperbool
+	ExpectedParticipantsNumber whereHelperint
+	NotificationEmail          whereHelperstring
 }{
-	ID:            whereHelperstring{field: "`event`.`id`"},
-	OwnerID:       whereHelperstring{field: "`event`.`owner_id`"},
-	Name:          whereHelperstring{field: "`event`.`name`"},
-	Description:   whereHelperstring{field: "`event`.`description`"},
-	DurationAbout: whereHelperstring{field: "`event`.`duration_about`"},
-	UnitSeconds:   whereHelperuint64{field: "`event`.`unit_seconds`"},
-	CreatedAt:     whereHelpertime_Time{field: "`event`.`created_at`"},
-	UpdatedAt:     whereHelpertime_Time{field: "`event`.`updated_at`"},
+	ID:                         whereHelperstring{field: "`event`.`id`"},
+	OwnerID:                    whereHelperstring{field: "`event`.`owner_id`"},
+	Name:                       whereHelperstring{field: "`event`.`name`"},
+	Description:                whereHelperstring{field: "`event`.`description`"},
+	DurationAbout:              whereHelperstring{field: "`event`.`duration_about`"},
+	UnitSeconds:                whereHelperuint64{field: "`event`.`unit_seconds`"},
+	CreatedAt:                  whereHelpertime_Time{field: "`event`.`created_at`"},
+	UpdatedAt:                  whereHelpertime_Time{field: "`event`.`updated_at`"},
+	EnablesEmailNotification:   whereHelperbool{field: "`event`.`enables_email_notification`"},
+	ExpectedParticipantsNumber: whereHelperint{field: "`event`.`expected_participants_number`"},
+	NotificationEmail:          whereHelperstring{field: "`event`.`notification_email`"},
 }
 
 // EventRels is where relationship names are stored.
@@ -215,9 +268,9 @@ func (r *eventR) GetUserEventAnswers() UserEventAnswerSlice {
 type eventL struct{}
 
 var (
-	eventAllColumns            = []string{"id", "owner_id", "name", "description", "duration_about", "unit_seconds", "created_at", "updated_at"}
-	eventColumnsWithoutDefault = []string{"id", "owner_id", "name", "description", "duration_about", "unit_seconds"}
-	eventColumnsWithDefault    = []string{"created_at", "updated_at"}
+	eventAllColumns            = []string{"id", "owner_id", "name", "description", "duration_about", "unit_seconds", "created_at", "updated_at", "enables_email_notification", "expected_participants_number", "notification_email"}
+	eventColumnsWithoutDefault = []string{"id", "owner_id", "name", "description", "duration_about", "unit_seconds", "notification_email"}
+	eventColumnsWithDefault    = []string{"created_at", "updated_at", "enables_email_notification", "expected_participants_number"}
 	eventPrimaryKeyColumns     = []string{"id"}
 	eventGeneratedColumns      = []string{}
 )
