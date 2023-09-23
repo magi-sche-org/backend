@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/caarlos0/env/v9"
@@ -54,6 +55,7 @@ type CSRF struct {
 type SMTP struct {
 	Host     string `env:"HOST" envDefault:"smtp.gmail.com"`
 	Email    string `env:"EMAIL" envDefault:"magische@gmail.com"`
+	User     string `env:"USER" envDefault:"user"`
 	Port     int    `env:"PORT" envDefault:"587"`
 	Password string `env:"PASSWORD" envDefault:"passwd"`
 }
@@ -87,7 +89,8 @@ func New() (*Config, error) {
 	if err := env.Parse(config); err != nil {
 		return nil, err
 	}
-	// log.Printf("config: %+v", config)
+
+	log.Printf("config: %+v", config)
 
 	return config, nil
 }
