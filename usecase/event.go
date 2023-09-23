@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/apperror"
+	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/entity"
 	"github.com/geekcamp-vol11-team30/backend/repository"
 	"github.com/geekcamp-vol11-team30/backend/util"
@@ -30,13 +31,15 @@ type EventUsecase interface {
 }
 
 type eventUsecase struct {
-	er repository.EventRepository
+	cfg *config.Config
+	er  repository.EventRepository
 	// uv validator.UserValidator
 }
 
-func NewEventUsecase(er repository.EventRepository) EventUsecase {
+func NewEventUsecase(cfg *config.Config, er repository.EventRepository) EventUsecase {
 	return &eventUsecase{
-		er: er,
+		cfg: cfg,
+		er:  er,
 		// uv: uv,
 	}
 }
@@ -157,23 +160,37 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 	}
 	newAnswer.Units = ansUnits
 
-	// メールの通知を希望するなら
-	if event.NotifyByEmail {
-		// ユーザーの回答数を数える
-		userAnswerCount, err := eu.er.FetchUserAnswerCount(ctx, tx, eventId)
-		if userAnswerCount != event.NumberOfParticipants {
-			util.SendMail(event.ConfirmationEmail, "マジスケ", "イベント参加者が集まりました")
-			if err != nil {
-				return entity.UserEventAnswer{}, apperror.NewUnknownError(fmt.Errorf("failed to send confirmation email: %w", err), nil)
-			}
-		}
-	}
-
 	// commit!
 	err = tx.Commit()
 	if err != nil {
 		return entity.UserEventAnswer{}, err
 	}
+
+	go func() {
+		log.Println("start goroutine", event)
+		// メールの通知を希望するなら
+		fmt.Println("aaaaaaaaaaaaaa", event.NotifyByEmail, event.ConfirmationEmail)
+		if event.NotifyByEmail && event.ConfirmationEmail != "" {
+			// ユーザーの回答数を数える
+			userAnswerCount, err := eu.er.FetchUserAnswerCount(ctx, nil, eventId)
+			fmt.Println("aaaaaaaaaaaaaa", userAnswerCount, event.NumberOfParticipants)
+			if userAnswerCount == event.NumberOfParticipants {
+				title := `[マジスケ]「` + event.Name + `」イベント参加者が集まりました！`
+				idstr := util.ULIDToString(eventId)
+				body := `マジスケをご利用頂き誠にありがとうございます。
+回答者数が，予定人数の` + fmt.Sprintf("%d", event.NumberOfParticipants) +
+					`人に到達しました。
+
+https://magi-sche.net/detail/` + idstr + `から確認できます。
+今後ともマジスケをよろしくお願いいたします。`
+				util.SendMail(*eu.cfg, event.ConfirmationEmail, title, body)
+				if err != nil {
+					log.Printf("failed to send confirmation email: %v", err)
+					// return entity.UserEventAnswer{}, apperror.NewUnknownError(fmt.Errorf("failed to send confirmation email: %w", err), nil)
+				}
+			}
+		}
+	}()
 
 	return newAnswer, nil
 }

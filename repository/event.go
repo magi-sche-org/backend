@@ -68,12 +68,15 @@ func (er *eventRepository) CreateEvent(ctx context.Context, tx *sql.Tx, event en
 
 	id := util.GenerateULID(ctx)
 	e := &models.Event{
-		ID:            util.ULIDToString(id),
-		OwnerID:       util.ULIDToString(event.OwnerID),
-		Name:          event.Name,
-		Description:   event.Description,
-		DurationAbout: event.DurationAbout,
-		UnitSeconds:   uint64(event.UnitSeconds),
+		ID:                         util.ULIDToString(id),
+		OwnerID:                    util.ULIDToString(event.OwnerID),
+		Name:                       event.Name,
+		Description:                event.Description,
+		DurationAbout:              event.DurationAbout,
+		UnitSeconds:                uint64(event.UnitSeconds),
+		EnablesEmailNotification:   event.NotifyByEmail,
+		ExpectedParticipantsNumber: event.NumberOfParticipants,
+		NotificationEmail:          event.ConfirmationEmail,
 	}
 	err := e.Insert(ctx, exc, boil.Infer())
 	if err != nil {

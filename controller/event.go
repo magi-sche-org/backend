@@ -164,11 +164,14 @@ func eventRequestToEvent(er entity.EventRequest) entity.Event {
 		}
 	}
 	return entity.Event{
-		Name:          er.Name,
-		Description:   er.Description,
-		DurationAbout: er.DurationAbout,
-		UnitSeconds:   er.UnitSeconds,
-		Units:         units,
+		Name:                 er.Name,
+		Description:          er.Description,
+		DurationAbout:        er.DurationAbout,
+		UnitSeconds:          er.UnitSeconds,
+		Units:                units,
+		NotifyByEmail:        er.NotifyByEmail,
+		NumberOfParticipants: er.NumberOfParticipants,
+		ConfirmationEmail:    er.ConfirmationEmail,
 	}
 }
 

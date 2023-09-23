@@ -15,9 +15,9 @@ type Event struct {
 	UnitSeconds          int               `json:"unitSeconds"`
 	Units                []EventTimeUnit   `json:"units"`
 	UserAnswers          []UserEventAnswer `json:"userAnswers"`
-	NotifyByEmail        bool              `json:"notifyByEmail"`
-	NumberOfParticipants int               `json:"numberOfParticipants"`
-	ConfirmationEmail    string            `json:"confirmationEmail"`
+	NotifyByEmail        bool              `json:"enablesEmailNotification"`
+	NumberOfParticipants int               `json:"expectedParticipantsNumber"`
+	ConfirmationEmail    string            `json:"notificationEmail"`
 }
 type EventRequest struct {
 	Name                 string                 `json:"name"`
@@ -25,9 +25,9 @@ type EventRequest struct {
 	DurationAbout        string                 `json:"durationAbout"`
 	UnitSeconds          int                    `json:"unitDuration"`
 	Units                []EventTimeUnitRequest `json:"units"`
-	NotifyByEmail        bool                   `json:"notifyByEmail"`
-	NumberOfParticipants int                    `json:"numberOfParticipants"`
-	ConfirmationEmail    string                 `json:"confirmationEmail"`
+	NotifyByEmail        bool                   `json:"enablesEmailNotification"`
+	NumberOfParticipants int                    `json:"expectedParticipantsNumber"`
+	ConfirmationEmail    string                 `json:"notificationEmail"`
 }
 type EventResponse struct {
 	ID            string                    `json:"id"`

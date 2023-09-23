@@ -13,7 +13,6 @@ import (
 	"github.com/geekcamp-vol11-team30/backend/router"
 	"github.com/geekcamp-vol11-team30/backend/service"
 	"github.com/geekcamp-vol11-team30/backend/usecase"
-	"github.com/geekcamp-vol11-team30/backend/util"
 	"github.com/geekcamp-vol11-team30/backend/validator"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -53,7 +52,7 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	uv := validator.NewUserValidator()
 	uu := usecase.NewUserUsecase(ur, oar, er, uv, gs, ms)
 	au := usecase.NewAuthUsecase(cfg, logger, ar)
-	eu := usecase.NewEventUsecase(er)
+	eu := usecase.NewEventUsecase(cfg, er)
 	oau := usecase.NewOauthUsecase(cfg, oar, ur, gs, ms, uu)
 
 	em := middleware.NewErrorMiddleware(logger, uu)
@@ -69,8 +68,8 @@ func run(ctx context.Context, logger *zap.Logger) error {
 	if err != nil {
 		logger.Fatal("failed to listen port", zap.Error(err))
 	}
-	err = util.SendMail(*cfg, "tak848.0428771@gmail.com", "konnitiha", "hello")
-	fmt.Println(err)
+	// err = util.SendMail(*cfg, "tak848.0428771@gmail.com", "konnitiha", "hello")
+	// fmt.Println(err)
 
 	e := router.NewRouter(cfg, logger, em, atm, am, uc, ac, ec, oc)
 	s := NewServer(e, l, logger)
