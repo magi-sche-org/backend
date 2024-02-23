@@ -1,5 +1,5 @@
 # build for deploy
-FROM golang:1.21-bullseye as deploy-builder
+FROM golang:1.22-bullseye as deploy-builder
 
 WORKDIR /app
 
@@ -33,7 +33,7 @@ CMD ["/app/migrate"]
 
 
 # for local development with air
-FROM golang:1.21-bullseye as dev
+FROM golang:1.22-bullseye as dev
 WORKDIR /app
 RUN go install github.com/cosmtrek/air@latest && \
     go install github.com/volatiletech/sqlboiler/v4@latest && \
