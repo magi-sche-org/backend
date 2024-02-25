@@ -4,9 +4,24 @@ on:
   push:
     branches:
       - develop
+env:
+  ENV: env
+  AWS_REGION: ap-northeast-1
+  AWS_ACCOUNT_ID: 905418376731
 
 jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: build-${{ steps.prep.outputs.date }}-${{ github.sha }}
+    steps:
+      - name: Prepare
+        id: prep
+        run: |
+          echo ::set-output name=date::$(date +%Y%m%d)
+
   build-and-push:
+    needs: [config]
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -33,14 +48,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::905418376731:role/magische-dev-api-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: login to ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/${{ github.repository }}/server
+          images: |
+            ghcr.io/${{ github.repository }}/server
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/magische-${{ env.ENV }}-api
           tags: |
-            type=sha,format=long,prefix=
+            type=raw,value=${{ needs.config.outputs.image_tag }}
             type=raw,value=latest
-            type=raw,value=build-${{ steps.prep.outputs.date }}-${{ steps.prep.outputs.sha }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -53,3 +79,33 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           target: deploy
           platforms: linux/amd64,linux/arm64
+
+  deploy:
+    needs: [config, build-and-push]
+    runs-on: ubuntu-latest
+    # use ecspresso
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::905418376731:role/magische-dev-api-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: kayac/ecspresso@v2
+        with:
+          version-file: ./infra/ecs/.ecspresso-version
+
+      - working-directory: ./infra/ecs
+        run: |
+          ecspresso deploy --config ecspresso.yml
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+          ENV: ${{ env.ENV }}
+          IMAGE_TAG: ${{ needs.config.outputs.image_tag }}
+          CPU: 256
+          MEMORY: 512
+          CPU_ARCHITECTURE: ARM64

@@ -3,37 +3,44 @@
     {
       cpu: 0,
       essential: true,
-      // image: 'nginx',
-      image: 'ghcr.io/magi-sche-org/backend/server:build-20240223-62edc4b2',
-      name: 'magische-dev-api',
+      image: '{{ must_env `IMAGE_TAG` }}',
+      logConfiguration: {
+        logDriver: 'awslogs',
+        options: {
+          'awslogs-group': '/ecs/magische-{{ must_env `ENV` }}-api-server',
+          'awslogs-region': '{{ must_env `AWS_REGION` }}',
+          'awslogs-stream-prefix': 'magische-{{ must_env `ENV` }}-api-server',
+        },
+      },
+      name: 'magische-{{ must_env `ENV` }}-api',
       portMappings: [
         {
           appProtocol: '',
-          containerPort: 80,
-          hostPort: 80,
+          containerPort: 8080,
+          hostPort: 8080,
           protocol: 'tcp',
         },
       ],
     },
   ],
-  cpu: '256',
-  executionRoleArn: 'arn:aws:iam::905418376731:role/magische-dev-api-server-task-exec',
-  family: 'magische-dev-api',
+  cpu: '{{ must_env `CPU` }}',
+  executionRoleArn: 'arn:aws:iam::905418376731:role/magische-{{ must_env `ENV` }}-api-server-task-exec',
+  family: 'magische-{{ must_env `ENV` }}-api',
   ipcMode: '',
-  memory: '512',
+  memory: '{{ must_env `MEMORY` }}',
   networkMode: 'awsvpc',
   pidMode: '',
   requiresCompatibilities: [
     'FARGATE',
   ],
   runtimePlatform: {
-    cpuArchitecture: 'ARM64',
+    cpuArchitecture: '{{ must_env `CPU_ARCHITECTURE` }}',
     operatingSystemFamily: 'LINUX',
   },
   tags: [
     {
       key: 'Env',
-      value: 'dev',
+      value: '{{ must_env `ENV` }}',
     },
     {
       key: 'Service',
@@ -41,8 +48,8 @@
     },
     {
       key: 'Name',
-      value: 'magische-dev-api-server',
+      value: 'magische-{{ must_env `ENV` }}-api-server',
     },
   ],
-  taskRoleArn: 'arn:aws:iam::905418376731:role/magische-dev-api-server-task',
+  taskRoleArn: 'arn:aws:iam::905418376731:role/magische-{{ must_env `ENV` }}-api-server-task',
 }
