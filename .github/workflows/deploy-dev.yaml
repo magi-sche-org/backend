@@ -10,30 +10,15 @@ env:
   AWS_ACCOUNT_ID: 905418376731
 
 jobs:
-  config:
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: build-${{ steps.prep.outputs.date }}-${{ github.sha }}
-    steps:
-      - name: Prepare
-        id: prep
-        run: |
-          echo ::set-output name=date::$(date +%Y%m%d)
-
   build-and-push:
-    needs: [config]
+    outputs:
+      ecr_image_name: ${{ steps.set_outputs.outputs.ecr_image_name }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
       id-token: write
       contents: read
     steps:
-      - name: Prepare
-        id: prep
-        run: |
-          echo ::set-output name=date::$(date +%Y%m%d)
-          echo ::set-output name=sha::$(echo ${GITHUB_SHA} | cut -c1-8)
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -53,21 +38,32 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::905418376731:role/magische-dev-api-deploy
+          role-to-assume: arn:aws:iam::905418376731:role/magische-${{ env.ENV }}-api-deploy
           aws-region: ${{ env.AWS_REGION }}
 
       - name: login to ecr
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
 
+      - id: set_env
+        name: set env
+        run: |
+          echo "image_tag=build-$(date +%Y%m%d)-${{ github.sha }}" >> $GITHUB_ENV
+          echo "ecr_repository_name=${{ steps.login-ecr.outputs.registry }}/magische-${{ env.ENV }}-api" >> $GITHUB_ENV
+
+      - id: set_outputs
+        name: set outputs
+        run: |
+          echo "image_name=${{ steps.set_env.outputs.ecr_repository_name }}:${{ steps.set_env.outputs.image_tag }}" >> $GITHUB_OUTPUT
+
       - uses: docker/metadata-action@v5
         id: meta
         with:
           images: |
             ghcr.io/${{ github.repository }}/server
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/magische-${{ env.ENV }}-api
+            ${{ steps.set_env.outputs.ecr_repository_name }}
           tags: |
-            type=raw,value=${{ needs.config.outputs.image_tag }}
+            type=raw,value=${{ steps.set_env.outputs.image_tag }}
             type=raw,value=latest
 
       - name: Build and push
@@ -86,9 +82,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs: [config, build-and-push]
+    needs: [build-and-push]
     runs-on: ubuntu-latest
-    # use ecspresso
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -110,7 +105,7 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
           ENV: ${{ env.ENV }}
-          IMAGE_TAG: ${{ needs.config.outputs.image_tag }}
+          IMAGE_NAME: ${{ needs.build-and-push.outputs.ecr_image_name }}
           CPU: 256
           MEMORY: 512
           CPU_ARCHITECTURE: ARM64

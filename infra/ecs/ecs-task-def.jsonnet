@@ -3,7 +3,7 @@
     {
       cpu: 0,
       essential: true,
-      image: '{{ must_env `IMAGE_TAG` }}',
+      image: '{{ must_env `IMAGE_NAME` }}',
       logConfiguration: {
         logDriver: 'awslogs',
         options: {
