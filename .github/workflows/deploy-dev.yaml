@@ -9,10 +9,6 @@ env:
   AWS_REGION: ap-northeast-1
   AWS_ACCOUNT_ID: 905418376731
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   config:
     runs-on: ubuntu-latest
@@ -29,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      id-token: write
+      contents: read
     steps:
       - name: Prepare
         id: prep
@@ -85,6 +83,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
   deploy:
+    permissions:
+      id-token: write
+      contents: read
     needs: [config, build-and-push]
     runs-on: ubuntu-latest
     # use ecspresso
