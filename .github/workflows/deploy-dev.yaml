@@ -54,7 +54,7 @@ jobs:
       - id: set_outputs
         name: set outputs
         run: |
-          echo "image_name=${{ steps.set_env.outputs.ecr_repository_name }}:${{ steps.set_env.outputs.image_tag }}" >> $GITHUB_OUTPUT
+          echo "ecr_image_name=${{ steps.set_env.outputs.ecr_repository_name }}:${{ steps.set_env.outputs.image_tag }}" >> $GITHUB_OUTPUT
 
       - uses: docker/metadata-action@v5
         id: meta
