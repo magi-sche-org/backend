@@ -48,13 +48,13 @@ jobs:
       - id: set_env
         name: set env
         run: |
-          echo "image_tag=build-$(date +%Y%m%d)-${{ github.sha }}" >> $GITHUB_ENV
-          echo "ecr_repository_name=${{ steps.login-ecr.outputs.registry }}/magische-${{ env.ENV }}-api" >> $GITHUB_ENV
+          echo "image_tag=build-$(date +%Y%m%d)-${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "ecr_repository_name=${{ steps.login-ecr.outputs.registry }}/magische-${{ env.ENV }}-api" >> $GITHUB_OUTPUT
 
       - id: set_outputs
         name: set outputs
         run: |
-          echo "ecr_image_name=$ecr_repository_name:$image_tag" >> $GITHUB_OUTPUT
+          echo "ecr_image_name=${{ steps.set_env.outputs.ecr_repository_name }}:${{ steps.set_env.outputs.image_tag }}" >> $GITHUB_OUTPUT
 
       - uses: docker/metadata-action@v5
         id: meta
