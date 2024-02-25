@@ -7,6 +7,7 @@ import (
 
 	"github.com/geekcamp-vol11-team30/backend/config"
 	"github.com/geekcamp-vol11-team30/backend/db"
+	applogger "github.com/geekcamp-vol11-team30/backend/logger"
 	"github.com/geekcamp-vol11-team30/backend/util"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
@@ -69,9 +70,11 @@ func run(ctx context.Context, logger *zap.Logger) error {
 
 	// e := router.NewRouter(cfg, logger, em, atm, am, uc, ac, ec, oc)
 	e := echo.New()
+	// enable log
 	e.GET("/health", func(c echo.Context) error {
 		return util.JSONResponse(c, 200, "OK")
 	})
+	applogger.SetRequestLoggerToEcho(e, logger)
 	s := NewServer(e, l, logger)
 	return s.Run(ctx)
 }
