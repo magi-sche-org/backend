@@ -5,7 +5,7 @@ on:
     branches:
       - develop
 env:
-  ENV: env
+  ENV: dev
   AWS_REGION: ap-northeast-1
   AWS_ACCOUNT_ID: 905418376731
 
