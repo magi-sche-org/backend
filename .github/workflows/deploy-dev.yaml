@@ -9,6 +9,10 @@ env:
   AWS_REGION: ap-northeast-1
   AWS_ACCOUNT_ID: 905418376731
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   config:
     runs-on: ubuntu-latest
