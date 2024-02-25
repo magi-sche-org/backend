@@ -54,7 +54,7 @@ jobs:
       - id: set_outputs
         name: set outputs
         run: |
-          echo "ecr_image_name=${{ steps.set_env.outputs.ecr_repository_name }}:${{ steps.set_env.outputs.image_tag }}" >> $GITHUB_OUTPUT
+          echo "ecr_image_name=$ecr_repository_name:$image_tag" >> $GITHUB_OUTPUT
 
       - uses: docker/metadata-action@v5
         id: meta
@@ -91,7 +91,7 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::905418376731:role/magische-dev-api-deploy
+          role-to-assume: arn:aws:iam::905418376731:role/magische-${{ env.ENV }}-api-deploy
           aws-region: ${{ env.AWS_REGION }}
 
       - uses: kayac/ecspresso@v2
