@@ -1,10 +1,8 @@
 package db
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/geekcamp-vol11-team30/backend/config"
 	"go.uber.org/zap"
@@ -42,11 +40,11 @@ func NewDB(cfg *config.Config, logger *zap.Logger) (*sql.DB, error) {
 		return nil, err
 	}
 
-	ctx, canncel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer canncel()
-	if err := db.PingContext(ctx); err != nil {
-		logger.Error("failed to ping db", zap.Error(err))
-		return nil, err
-	}
+	// ctx, canncel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer canncel()
+	// if err := db.PingContext(ctx); err != nil {
+	// 	logger.Error("failed to ping db", zap.Error(err))
+	// 	return nil, err
+	// }
 	return db, nil
 }

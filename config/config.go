@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Port                 int      `env:"PORT" envDefault:"80"`
+	Port                 int      `env:"PORT" envDefault:"8080"`
 	Env                  string   `env:"ENV" envDefault:"dev"`
 	BaseURL              string   `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	SecretKey            string   `env:"SECRET_KEY" envDefault:"secret"`

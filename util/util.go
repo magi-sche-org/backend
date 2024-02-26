@@ -123,7 +123,8 @@ func SendMail(cfg config.Config, targetAddrs string, title string, body string) 
 	hostname := cfg.SMTP.Host // SMTPサーバーのホスト名
 	port := cfg.SMTP.Port     // SMTPサーバーのポート番号
 	password := cfg.SMTP.Password
-	from := cfg.SMTP.Email // 送信者のメールアドレス
+	// from := cfg.SMTP.Email // 送信者のメールアドレス
+	// from = "マジスケ<noreply@magi-sche.net>"
 	username := cfg.SMTP.User
 
 	recipients := []string{targetAddrs} // 送信先のメールアドレス
@@ -131,10 +132,10 @@ func SendMail(cfg config.Config, targetAddrs string, title string, body string) 
 	auth := smtp.PlainAuth("", username, password, hostname)
 
 	msg := []byte(strings.ReplaceAll(fmt.Sprintf(
-		"To: %s\nSubject: %s\n\n%s", strings.Join(recipients, ","), title, body),
+		"From: マジスケ<noreply@magi-sche.net>\nTo: %s\nSubject: %s\n\n%s", strings.Join(recipients, ","), title, body),
 		"\n", "\r\n"))
 	// メール送信
-	err := smtp.SendMail(fmt.Sprintf("%s:%d", hostname, port), auth, from, recipients, msg)
+	err := smtp.SendMail(fmt.Sprintf("%s:%d", hostname, port), auth, "noreply@magi-sche.net", recipients, msg)
 
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)

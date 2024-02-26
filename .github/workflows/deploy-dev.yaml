@@ -1,0 +1,111 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - develop
+env:
+  ENV: dev
+  AWS_REGION: ap-northeast-1
+  AWS_ACCOUNT_ID: 905418376731
+
+jobs:
+  build-and-push:
+    outputs:
+      ecr_image_name: ${{ steps.set_outputs.outputs.ecr_image_name }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::905418376731:role/magische-${{ env.ENV }}-api-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: login to ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        id: login-ecr
+
+      - id: set_env
+        name: set env
+        run: |
+          echo "image_tag=build-$(date +%Y%m%d)-${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "ecr_repository_name=${{ steps.login-ecr.outputs.registry }}/magische-${{ env.ENV }}-api" >> $GITHUB_OUTPUT
+
+      - id: set_outputs
+        name: set outputs
+        run: |
+          echo "ecr_image_name=${{ steps.set_env.outputs.ecr_repository_name }}:${{ steps.set_env.outputs.image_tag }}" >> $GITHUB_OUTPUT
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}/server
+            ${{ steps.set_env.outputs.ecr_repository_name }}
+          tags: |
+            type=raw,value=${{ steps.set_env.outputs.image_tag }}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          target: deploy
+          platforms: linux/amd64,linux/arm64
+
+  deploy:
+    permissions:
+      id-token: write
+      contents: read
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::905418376731:role/magische-${{ env.ENV }}-api-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: kayac/ecspresso@v2
+        with:
+          version-file: ./infra/ecs/.ecspresso-version
+
+      - working-directory: ./infra/ecs
+        run: |
+          ecspresso deploy --config ecspresso.yml
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+          ENV: ${{ env.ENV }}
+          IMAGE_NAME: ${{ needs.build-and-push.outputs.ecr_image_name }}
+          CPU: 256
+          MEMORY: 512
+          CPU_ARCHITECTURE: ARM64
