@@ -74,51 +74,51 @@
       secrets: [
         {
           name: 'MYSQL_USER',
-          valueFrom: '{{ tfstate `output.rds_admin_password_secret_arn` }}:username',
+          valueFrom: '{{ tfstate `output.rds_admin_password_secret_arn` }}:username::',
         },
         {
           name: 'MYSQL_PASSWORD',
-          valueFrom: '{{ tfstate `output.rds_admin_password_secret_arn` }}:password',
+          valueFrom: '{{ tfstate `output.rds_admin_password_secret_arn` }}:password::',
         },
         {
           name: 'SECRET_KEY',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:secret_key',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:secret_key::',
         },
         {
           name: 'OAUTH_GOOGLE_CLIENT_ID',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_google_client_id',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_google_client_id::',
         },
         {
           name: 'OAUTH_GOOGLE_CLIENT_SECRET',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_google_client_secret',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_google_client_secret::',
         },
         {
           name: 'OAUTH_MICROSOFT_CLIENT_ID',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_microsoft_client_id',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_microsoft_client_id::',
         },
         {
           name: 'OAUTH_MICROSOFT_CLIENT_SECRET',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_microsoft_client_secret',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:oauth_microsoft_client_secret::',
         },
         {
           name: 'SMTP_EMAIL',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_email',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_email::',
         },
         {
           name: 'SMTP_USER',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_user',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_user::',
         }
         {
           name: 'SMTP_PASSWORD',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_password',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_password::',
         },
         {
           name: 'SMTP_HOST',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_host',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_host::',
         },
         {
           name: 'SMTP_PORT',
-          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_port',
+          valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_port::',
         },
       ],
     },
