@@ -100,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::905418376731:role/magische-${{ env.ENV }}-api-deploy
           aws-region: ${{ env.AWS_REGION }}
