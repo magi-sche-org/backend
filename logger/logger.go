@@ -99,9 +99,9 @@ func SetRequestLoggerToEcho(e *echo.Echo, logger *zap.Logger) {
 	}
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// if c.Path() == "/health" {
-			// 	return next(c)
-			// }
+			if c.Path() == "/health" {
+				return next(c)
+			}
 			return middleware.RequestLoggerWithConfig(cfg)(next)(c)
 		}
 	})

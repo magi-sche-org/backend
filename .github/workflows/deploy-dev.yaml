@@ -8,6 +8,15 @@ env:
   ENV: dev
   AWS_REGION: ap-northeast-1
   AWS_ACCOUNT_ID: 905418376731
+  BASE_URL: https://api.dev.magi-sche.org
+  PORT: 8080
+  FRONTEND_ENDPOINT: https://dev.magi-sche.org
+  OAUTH_DEFAULT_RETURN_URL: https://dev.magi-sche.org/callback
+  CORS_ORIGINS: https://dev.magi-sche.org
+  ACCESS_TOKEN_EXPIRE_MINUTES: 5
+  # 60 days = 30 * 24 * 60 = 43200 minutes
+  REFRESH_TOKEN_EXPIRE_MINUTES: 86400
+  SQL_LOG: true
 
 jobs:
   build-and-push:
@@ -42,7 +51,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: login to ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         id: login-ecr
 
       - id: set_env
@@ -79,6 +88,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
   deploy:
+    environment:
+      name: dev
     permissions:
       id-token: write
       contents: read
@@ -89,7 +100,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::905418376731:role/magische-${{ env.ENV }}-api-deploy
           aws-region: ${{ env.AWS_REGION }}
@@ -102,6 +113,8 @@ jobs:
         run: |
           ecspresso deploy --config ecspresso.yml
         env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TFC_WORKSPACE: magische_infra_${{ env.ENV }}
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
           ENV: ${{ env.ENV }}
