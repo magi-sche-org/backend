@@ -8,6 +8,15 @@ env:
   ENV: dev
   AWS_REGION: ap-northeast-1
   AWS_ACCOUNT_ID: 905418376731
+  BASE_URL: https://api.dev.magi-sche.org
+  PORT: 8080
+  FRONTEND_ENDPOINT: https://dev.magi-sche.org
+  OAUTH_DEFAULT_RETURN_URL: https://dev.magi-sche.org/callback
+  CORS_ORIGINS: https://dev.magi-sche.org
+  ACCESS_TOKEN_EXPIRE_MINUTES: 5
+  # 60 days = 30 * 24 * 60 = 43200 minutes
+  REFRESH_TOKEN_EXPIRE_MINUTES: 86400
+  SQL_LOG: true
 
 jobs:
   build-and-push:
@@ -79,6 +88,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
   deploy:
+    environment:
+      name: dev
     permissions:
       id-token: write
       contents: read
@@ -102,6 +113,8 @@ jobs:
         run: |
           ecspresso deploy --config ecspresso.yml
         env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          TFC_WORKSPACE: magische_infra_${{ env.ENV }}
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
           ENV: ${{ env.ENV }}
