@@ -107,7 +107,7 @@
         {
           name: 'SMTP_USER',
           valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_user::',
-        }
+        },
         {
           name: 'SMTP_PASSWORD',
           valueFrom: '{{ tfstate `output.api_server_ssm_arn` }}:smtp_password::',
