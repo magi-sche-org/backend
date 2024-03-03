@@ -183,7 +183,7 @@ func (eu *eventUsecase) CreateUserAnswer(ctx context.Context, eventId ulid.ULID,
 
 https://magi-sche.net/detail/` + idstr + `から確認できます。
 今後ともマジスケをよろしくお願いいたします。`
-			util.SendMail(*eu.cfg, event.ConfirmationEmail, title, body)
+			err = util.SendMail(*eu.cfg, event.ConfirmationEmail, title, body)
 			if err != nil {
 				log.Printf("failed to send confirmation email: %v", err)
 				// return entity.UserEventAnswer{}, apperror.NewUnknownError(fmt.Errorf("failed to send confirmation email: %w", err), nil)
