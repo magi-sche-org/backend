@@ -149,11 +149,16 @@ func (au *authUsecase) RefreshToken(ctx context.Context, refreshToken string) (e
 		return entity.Token{}, err
 	}
 
-	// Revoke the previous refresh token
-	err = au.ar.DeleteRefreshToken(ctx, refreshToken)
-	if err != nil {
-		return entity.Token{}, err
-	}
+	go func() {
+		time.Sleep(3 * time.Second) // 暫定処置
+		// Revoke the previous refresh token
+		err = au.ar.DeleteRefreshToken(context.Background(), refreshToken)
+		if err != nil {
+			// return entity.Token{}, err
+			log.Println("refresh token delete error", err)
+		}
+		log.Println("refresh token deleted")
+	}()
 	return newAccessToken, nil
 
 	// return entity.Token{
